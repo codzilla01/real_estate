@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المكتب العقاري | Al Maktab Al Aqari - عقارات فاخرة في الإمارات</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>المكتب العقاري | عقارات فاخرة في الإمارات</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -38,7 +38,6 @@
         }
         @keyframes bgFloat { 0%,100%{transform:translate(0,0)} 25%{transform:translate(-2%,2%)} 50%{transform:translate(2%,-2%)} 75%{transform:translate(-1%,-1%)} }
 
-        /* Header */
         .header {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
             padding: 16px 32px; transition: var(--transition);
@@ -75,7 +74,6 @@
         }
         .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(212,175,55,0.4); }
 
-        /* Hero */
         .hero {
             min-height: 90vh; display: flex; align-items: center; justify-content: center;
             position: relative; overflow: hidden; padding: 120px 20px 60px;
@@ -108,13 +106,11 @@
         .search-input:focus, .search-select:focus { border-color: var(--gold); background: rgba(255,255,255,0.18); }
         .search-select option { background: #1a1a24; color: #fff; }
 
-        /* Sections */
         .section { padding: 70px 20px; max-width: 1400px; margin: 0 auto; }
         .section-title { font-size: clamp(28px, 4vw, 42px); font-weight: 900; text-align: center; margin-bottom: 8px; }
         .section-subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 40px; }
         .gold-text { color: var(--gold); }
 
-        /* Properties Grid */
         .properties-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
         .property-card {
             position: relative; border-radius: var(--radius-lg); overflow: hidden;
@@ -147,7 +143,6 @@
         .status-rented { background: rgba(59,130,246,0.85); color: #fff; }
         .featured-badge { position: absolute; top: 14px; left: 14px; z-index: 3; color: var(--gold); font-size: 1.2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
-        /* Services */
         .services { background: var(--bg-secondary); padding: 70px 20px; transition: var(--transition); }
         .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; max-width: 1400px; margin: 0 auto; }
         .service-card {
@@ -162,7 +157,6 @@
         .service-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 8px; }
         .service-desc { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.7; }
 
-        /* Stats */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
         .stat-card {
             text-align: center; padding: 32px 20px;
@@ -173,12 +167,10 @@
         .stat-number { font-size: 2.6rem; font-weight: 900; background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .stat-label { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
 
-        /* CTA */
         .cta-section { text-align: center; padding: 80px 20px; background: linear-gradient(135deg, rgba(10,77,60,0.08), rgba(212,175,55,0.08)); }
         .cta-title { font-size: 2rem; font-weight: 900; margin-bottom: 12px; }
         .cta-text { color: var(--text-secondary); margin-bottom: 28px; font-size: 1rem; }
 
-        /* Footer */
         .footer { background: var(--bg-secondary); padding: 50px 20px 24px; border-top: 1px solid var(--border-glass); transition: var(--transition); }
         .footer-grid { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 30px; }
         .footer-logo { font-size: 1.6rem; font-weight: 900; background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 12px; }
@@ -190,13 +182,36 @@
         .footer-links a:hover { color: var(--gold); }
         .footer-bottom { text-align: center; padding-top: 24px; border-top: 1px solid var(--border-glass); margin-top: 30px; color: var(--text-secondary); font-size: 0.8rem; }
 
-        /* Toast */
         .toast {
             position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
             background: var(--bg-secondary); border: 1px solid var(--gold);
             padding: 10px 24px; border-radius: var(--radius-full); z-index: 5000;
             display: none; color: var(--text-primary); font-weight: 600; font-size: 0.85rem;
         }
+
+        /* Property Detail Modal */
+        .property-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+            z-index: 4000; display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .property-modal-overlay.active { display: flex; }
+        .property-modal {
+            background: var(--bg-secondary); border-radius: 28px; max-width: 600px; width: 100%;
+            max-height: 90vh; overflow-y: auto; position: relative; padding: 28px;
+            border: 1px solid var(--gold); box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            animation: modalPop 0.3s ease;
+        }
+        @keyframes modalPop { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        .modal-close-btn {
+            position: absolute; top: 16px; left: 16px; background: rgba(0,0,0,0.4);
+            border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%;
+            cursor: pointer; font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
+        }
+        .modal-image { width: 100%; height: 280px; object-fit: cover; border-radius: 20px; margin-bottom: 20px; }
+        .modal-detail-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+        .modal-detail-badge { background: rgba(212,175,55,0.15); padding: 8px 16px; border-radius: 30px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; }
+        .modal-price { font-size: 2rem; font-weight: 900; color: var(--gold); }
+        .modal-whatsapp-btn { background: #25D366; color: #fff; padding: 14px 28px; border-radius: 50px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; cursor: pointer; border: none; width: 100%; margin-top: 20px; font-family: 'Tajawal'; font-size: 1rem; }
 
         @media (max-width: 768px) {
             .nav-menu { display: none; }
@@ -293,15 +308,18 @@
             <div><h3 class="footer-title">خدماتنا</h3><ul class="footer-links"><li><a href="#">بيع العقارات</a></li><li><a href="#">إدارة الأملاك</a></li><li><a href="#">الاستشارات</a></li></ul></div>
             <div><h3 class="footer-title">تواصل معنا</h3><ul class="footer-links" id="footerContact"><li>📍 شارع الشيخ زايد، دبي</li><li>📞 +971557811458</li><li>✉️ info@almaktab.ae</li></ul></div>
         </div>
-        <div class="footer-bottom"><p>© 2026 المكتب العقاري | جميع الحقوق محفوظة</p>
-            <a href="https://me-one-blue.vercel.app"> <Mr. Developer</a>
+        <div class="footer-bottom"><p>© 2026 المكتب العقاري | جميع الحقوق محفوظة</p></div>
     </footer>
+
+    <!-- Property Detail Modal -->
+    <div class="property-modal-overlay" id="propertyModal">
+        <div class="property-modal" id="propertyModalContent"></div>
+    </div>
 
     <div class="toast" id="toast"></div>
 
     <script>
         (function() {
-            // ==================== DATA - نفس localStorage الذي تستخدمه لوحة التحكم ====================
             function getProperties() {
                 return JSON.parse(localStorage.getItem('almaktab_properties') || '[]');
             }
@@ -309,13 +327,59 @@
                 return JSON.parse(localStorage.getItem('almaktab_content') || '{"heroTitle":"اكتشف أفخم العقارات في الإمارات","heroSubtitle":"نقدم لكم نخبة من أرقى العقارات الفاخرة","aboutText":"","contactPhone":"+971 4 123 4567","contactEmail":"info@almaktab.ae","contactAddress":"شارع الشيخ زايد، دبي"}');
             }
             function getSettings() {
-                return JSON.parse(localStorage.getItem('almaktab_settings') || '{"defaultLanguage":"ar","defaultTheme":"dark","whatsappNumber":"971501234567","currency":"AED"}');
+                return JSON.parse(localStorage.getItem('almaktab_settings') || '{"defaultLanguage":"ar","defaultTheme":"dark","whatsappNumber":"971557811458","currency":"AED"}');
             }
 
-            // ==================== RENDER ====================
             function getStatusClass(status) {
                 return { 'متاحة': 'status-available', 'محجوز': 'status-reserved', 'مباع': 'status-sold', 'مؤجر': 'status-rented' }[status] || '';
             }
+
+            function openPropertyModal(p) {
+                const settings = getSettings();
+                const currency = settings.currency || 'د.إ';
+                const whatsappNumber = settings.whatsappNumber || '971557811458';
+                const modal = document.getElementById('propertyModal');
+                const content = document.getElementById('propertyModalContent');
+                
+                let message = `🏢 *${p.name}*\n📍 ${p.location}\n🏷️ ${p.type} - ${p.dealType || 'بيع'}\n💰 ${p.price.toLocaleString()} ${currency}\n📊 الحالة: ${p.status}`;
+                if (p.rooms) message += `\n🛏️ ${p.rooms} غرف`;
+                if (p.bathrooms) message += `\n🛁 ${p.bathrooms} حمام`;
+                if (p.area) message += `\n📐 ${p.area.toLocaleString()} قدم²`;
+                if (p.description) message += `\n📝 ${p.description}`;
+                message += `\n\n_الرجاء التواصل معي بخصوص هذا العقار_`;
+
+                content.innerHTML = `
+                    <button class="modal-close-btn" onclick="closePropertyModal()">✕</button>
+                    <img src="${p.image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600'}" alt="${p.name}" class="modal-image" onerror="this.src='https://via.placeholder.com/600x400/1a1a24/D4AF37?text=' + encodeURIComponent(p.name.substring(0,10))">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <span class="property-tag">${p.type} - ${p.dealType || 'بيع'}</span>
+                        <span class="property-status-badge ${getStatusClass(p.status)}" style="position:static;">${p.status}</span>
+                    </div>
+                    <h2 style="font-size:1.8rem; margin:12px 0 6px;">${p.name}</h2>
+                    <p style="color:var(--text-secondary); display:flex; align-items:center; gap:4px;">📍 ${p.location}</p>
+                    <div class="modal-detail-row">
+                        ${p.rooms ? `<span class="modal-detail-badge">🛏️ ${p.rooms} غرف</span>` : ''}
+                        ${p.bathrooms ? `<span class="modal-detail-badge">🛁 ${p.bathrooms} حمام</span>` : ''}
+                        ${p.area ? `<span class="modal-detail-badge">📐 ${p.area.toLocaleString()} قدم²</span>` : ''}
+                    </div>
+                    <div class="modal-price" style="margin:16px 0;">${p.price.toLocaleString()} ${currency}</div>
+                    ${p.description ? `<p style="color:var(--text-secondary); line-height:1.8; margin:12px 0;">📝 ${p.description}</p>` : ''}
+                    <button class="modal-whatsapp-btn" onclick="window.open('https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}', '_blank')">
+                        <i class="fab fa-whatsapp"></i> تواصل عبر واتساب
+                    </button>
+                `;
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            window.closePropertyModal = function() {
+                document.getElementById('propertyModal').classList.remove('active');
+                document.body.style.overflow = '';
+            };
+
+            document.getElementById('propertyModal').addEventListener('click', function(e) {
+                if (e.target === this) closePropertyModal();
+            });
 
             function createPropertyCard(p) {
                 const card = document.createElement('div');
@@ -335,10 +399,7 @@
                         </div>
                         <div class="property-price">${p.price.toLocaleString()} ${getSettings().currency || 'د.إ'}</div>
                     </div>`;
-                card.addEventListener('click', () => {
-                    const msg = `🏢 *${p.name}*\n📍 ${p.location}\n🏷️ ${p.type} - ${p.dealType || 'بيع'}\n💰 ${p.price.toLocaleString()} ${getSettings().currency || 'د.إ'}\n📊 الحالة: ${p.status}\n${p.description ? '📝 ' + p.description : ''}`;
-                    window.open(`https://wa.me/${getSettings().whatsappNumber || '971501234567'}?text=${encodeURIComponent(msg)}`, '_blank');
-                });
+                card.addEventListener('click', () => openPropertyModal(p));
                 return card;
             }
 
@@ -365,7 +426,6 @@
                 } else {
                     props.forEach(p => grid.appendChild(createPropertyCard(p)));
                 }
-                // Update filter tab styles
                 const tabs = document.querySelectorAll('#filterTabs button');
                 tabs.forEach((tab, i) => {
                     if ((filter === 'all' && i === 0) || tab.textContent.includes(filter)) {
@@ -378,14 +438,10 @@
 
             function updateStats() {
                 const props = getProperties();
-                const total = props.length;
-                const available = props.filter(p => p.status === 'متاحة').length;
-                const sold = props.filter(p => p.status === 'مباع').length;
-                const totalValue = props.reduce((s, p) => s + p.price, 0);
-                document.getElementById('statTotal').textContent = total + '+';
-                document.getElementById('statAvailable').textContent = available + '+';
-                document.getElementById('statSold').textContent = sold + '+';
-                document.getElementById('statValue').textContent = (totalValue / 1e6).toFixed(0) + '+';
+                document.getElementById('statTotal').textContent = props.length + '+';
+                document.getElementById('statAvailable').textContent = props.filter(p => p.status === 'متاحة').length + '+';
+                document.getElementById('statSold').textContent = props.filter(p => p.status === 'مباع').length + '+';
+                document.getElementById('statValue').textContent = (props.reduce((s, p) => s + p.price, 0) / 1e6).toFixed(0) + '+';
             }
 
             function updateContent() {
@@ -393,16 +449,16 @@
                 if (content.heroTitle) document.getElementById('heroTitle').innerHTML = content.heroTitle.replace('العقارات', '<span>العقارات</span>');
                 if (content.heroSubtitle) document.getElementById('heroSubtitle').textContent = content.heroSubtitle;
                 if (content.contactPhone) {
-                    const contactEl = document.querySelector('#footerContact li:nth-child(2)');
-                    if (contactEl) contactEl.textContent = '📞 ' + content.contactPhone;
+                    const el = document.querySelector('#footerContact li:nth-child(2)');
+                    if (el) el.textContent = '📞 ' + content.contactPhone;
                 }
                 if (content.contactEmail) {
-                    const emailEl = document.querySelector('#footerContact li:nth-child(3)');
-                    if (emailEl) emailEl.textContent = '✉️ ' + content.contactEmail;
+                    const el = document.querySelector('#footerContact li:nth-child(3)');
+                    if (el) el.textContent = '✉️ ' + content.contactEmail;
                 }
                 if (content.contactAddress) {
-                    const addrEl = document.querySelector('#footerContact li:nth-child(1)');
-                    if (addrEl) addrEl.textContent = '📍 ' + content.contactAddress;
+                    const el = document.querySelector('#footerContact li:nth-child(1)');
+                    if (el) el.textContent = '📍 ' + content.contactAddress;
                 }
             }
 
@@ -425,7 +481,6 @@
                         props.forEach(p => grid.appendChild(createPropertyCard(p)));
                     }
                 }
-                // Scroll to results
                 document.getElementById('all-properties').scrollIntoView({ behavior: 'smooth' });
             }
 
@@ -435,7 +490,6 @@
                 clearTimeout(t._t); t._t = setTimeout(() => t.style.display = 'none', 2500);
             }
 
-            // ==================== THEME & LANG ====================
             function loadTheme() {
                 const settings = getSettings();
                 const saved = localStorage.getItem('theme') || settings.defaultTheme || 'dark';
@@ -454,7 +508,6 @@
                 document.getElementById('themeToggle').textContent = isDark ? '🌙' : '☀️';
             }
 
-            // ==================== EVENTS ====================
             document.getElementById('themeToggle').addEventListener('click', toggleTheme);
             document.getElementById('langToggle').addEventListener('click', () => showToast('🌐 اللغة العربية هي اللغة الافتراضية'));
 
@@ -464,23 +517,18 @@
                 else header.classList.remove('scrolled');
             });
 
-            // Expose for filter buttons
             window.renderAllProperties = renderAllProperties;
             window.searchProperties = searchProperties;
 
-            // ==================== INIT ====================
             function init() {
                 loadTheme();
                 renderFeatured();
                 renderAllProperties('all');
                 updateStats();
                 updateContent();
-                console.log('✅ الموقع الرئيسي يقرأ البيانات من لوحة التحكم');
-                console.log('📊 عدد العقارات:', getProperties().length);
-                console.log('🔄 التعديلات تظهر فوراً للعملاء');
+                console.log('✅ الموقع الرئيسي - النقر على العقار يعرض نافذة تفاصيل في المنتصف');
             }
 
-            // إعادة تحميل البيانات كل 3 ثواني للتحديثات المباشرة
             setInterval(() => {
                 renderFeatured();
                 updateStats();
