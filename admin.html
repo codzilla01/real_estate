@@ -175,6 +175,8 @@
         /* Image Preview */
         .image-preview { margin-top: 8px; max-width: 100px; max-height: 100px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); display: none; }
         .image-preview img { width: 100%; height: auto; display: block; }
+        .video-preview { margin-top: 8px; max-width: 200px; max-height: 150px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); display: none; }
+        .video-preview video { width: 100%; height: auto; display: block; }
 
         /* ==================== RESPONSIVE STYLES ==================== */
         @media (max-width: 992px) {
@@ -379,6 +381,15 @@
                             <img id="previewImg" src="" alt="معاينة الصورة">
                         </div>
                     </div>
+                    <!-- ===== NEW: Video Upload Field ===== -->
+                    <div class="form-group">
+                        <label>رفع فيديو العقار</label>
+                        <input type="file" id="propVideoFile" accept="video/*" onchange="previewVideo(event)">
+                        <div class="video-preview" id="videoPreview">
+                            <video id="previewVideo" controls></video>
+                        </div>
+                    </div>
+                    <!-- ===== END Video Upload ===== -->
                     <div class="form-group">
                         <label>الحالة</label>
                         <select id="propStatus">
@@ -544,6 +555,19 @@
                     reader.readAsDataURL(file);
                 } else {
                     document.getElementById('imagePreview').style.display = 'none';
+                }
+            };
+
+            // ===== NEW: Video preview function =====
+            window.previewVideo = function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const preview = document.getElementById('videoPreview');
+                    const video = document.getElementById('previewVideo');
+                    video.src = URL.createObjectURL(file);
+                    preview.style.display = 'block';
+                } else {
+                    document.getElementById('videoPreview').style.display = 'none';
                 }
             };
 
@@ -1146,13 +1170,19 @@
             // ==================== PROPERTIES ====================
             async function openPropertyModal(id = null) {
                 document.getElementById('propertyModal').classList.add('active');
-                // Reset preview
+                // Reset previews
                 const previewDiv = document.getElementById('imagePreview');
                 const previewImg = document.getElementById('previewImg');
                 const fileInput = document.getElementById('propImageFile');
+                const videoPreviewDiv = document.getElementById('videoPreview');
+                const videoPlayer = document.getElementById('previewVideo');
+                const videoInput = document.getElementById('propVideoFile');
                 fileInput.value = '';
+                videoInput.value = '';
                 previewDiv.style.display = 'none';
                 previewImg.src = '';
+                videoPreviewDiv.style.display = 'none';
+                videoPlayer.src = '';
                 
                 if (id) {
                     const p = properties.find(p => p.id === id);
@@ -1178,11 +1208,17 @@
                         previewImg.src = p.image;
                         previewDiv.style.display = 'block';
                     }
+                    // Show existing video if present
+                    if (p.video) {
+                        videoPlayer.src = p.video;
+                        videoPreviewDiv.style.display = 'block';
+                    }
                 } else {
                     document.getElementById('modalTitle').textContent = 'إضافة عقار جديد';
                     document.getElementById('propertyForm').reset();
                     document.getElementById('propId').value = '';
                     document.getElementById('imagePreview').style.display = 'none';
+                    document.getElementById('videoPreview').style.display = 'none';
                 }
             }
 
@@ -1190,15 +1226,32 @@
                 e.preventDefault();
                 const id = document.getElementById('propId').value;
                 const imageFile = document.getElementById('propImageFile').files[0];
+                const videoFile = document.getElementById('propVideoFile').files[0];
                 let imageData = null;
+                let videoData = null;
                 
+                // Handle image
                 if (imageFile) {
                     imageData = await fileToBase64(imageFile);
                 } else if (id) {
-                    // keep existing image
                     const existingProp = properties.find(p => p.id === parseInt(id));
                     if (existingProp && existingProp.image) {
                         imageData = existingProp.image;
+                    }
+                }
+                
+                // Handle video
+                if (videoFile) {
+                    // Check video size (limit 20MB to avoid localStorage overflow)
+                    if (videoFile.size > 20 * 1024 * 1024) {
+                        showNotification('❌ حجم الفيديو كبير جداً (الحد الأقصى 20 ميجابايت)', 'error');
+                        return;
+                    }
+                    videoData = await fileToBase64(videoFile);
+                } else if (id) {
+                    const existingProp = properties.find(p => p.id === parseInt(id));
+                    if (existingProp && existingProp.video) {
+                        videoData = existingProp.video;
                     }
                 }
                 
@@ -1212,6 +1265,7 @@
                     rooms: parseInt(document.getElementById('propRooms').value) || 0,
                     bathrooms: parseInt(document.getElementById('propBathrooms').value) || 0,
                     image: imageData || '',
+                    video: videoData || '', // NEW: store video data
                     status: document.getElementById('propStatus').value,
                     dealType: document.getElementById('propDealType').value,
                     featured: document.getElementById('propFeatured').checked,
@@ -1232,7 +1286,7 @@
 
             function renderPropertiesTable(props) {
                 if (!props.length) return '<div style="padding:40px;text-align:center;color:var(--text-secondary);">لا توجد عقارات</div>';
-                return `<table><thead><tr><th>#</th><th>العقار</th><th>النوع</th><th>الموقع</th><th>السعر</th><th>الحالة</th><th>مميز</th><th>إجراءات</th></tr></thead><tbody>${props.map((p, i) => `<tr><td style="font-weight:600;">${i+1}</td><td style="display:flex;align-items:center;gap:8px;"><img src="${p.image || 'https://via.placeholder.com/40?text=No+Img'}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;">${p.name}</td><td>${p.type}</td><td>${p.location}</td><td>${p.price.toLocaleString()} د.إ</td><td><span class="status-badge ${getStatusClass(p.status)}">${p.status}</span></td><td>${p.featured ? '<i class="fas fa-star" style="color:var(--gold);"></i>' : '<i class="far fa-star" style="color:#555;"></i>'}</td><td><div class="action-icons"><button class="action-icon" onclick="openPropertyModal(${p.id})"><i class="fas fa-pen"></i></button><button class="action-icon" onclick="deleteItem(\'property\', ${p.id})"><i class="fas fa-trash"></i></button><button class="action-icon" onclick="toggleFeatured(${p.id})"><i class="fas fa-star"></i></button><select style="background:var(--bg-dark);color:#fff;border:1px solid var(--border-color);border-radius:6px;padding:4px;font-size:0.75rem;" onchange="changeStatus(${p.id}, this.value)"><option ${p.status==='متاحة'?'selected':''}>متاحة</option><option ${p.status==='محجوز'?'selected':''}>محجوز</option><option ${p.status==='مباع'?'selected':''}>مباع</option><option ${p.status==='مؤجر'?'selected':''}>مؤجر</option></select></div></td>`).join('')}</tbody></table>`;
+                return `<table><thead><tr><th>#</th><th>العقار</th><th>النوع</th><th>الموقع</th><th>السعر</th><th>الحالة</th><th>مميز</th><th>فيديو</th><th>إجراءات</th></tr></thead><tbody>${props.map((p, i) => `<tr><td style="font-weight:600;">${i+1}</td><td style="display:flex;align-items:center;gap:8px;"><img src="${p.image || 'https://via.placeholder.com/40?text=No+Img'}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;">${p.name}</td><td>${p.type}</td><td>${p.location}</td><td>${p.price.toLocaleString()} د.إ</td><td><span class="status-badge ${getStatusClass(p.status)}">${p.status}</span></td><td>${p.featured ? '<i class="fas fa-star" style="color:var(--gold);"></i>' : '<i class="far fa-star" style="color:#555;"></i>'}</td><td>${p.video ? '<i class="fas fa-video" style="color:var(--info);" title="يوجد فيديو"></i>' : '<i class="fas fa-video-slash" style="color:#555;"></i>'}</td><td><div class="action-icons"><button class="action-icon" onclick="openPropertyModal(${p.id})"><i class="fas fa-pen"></i></button><button class="action-icon" onclick="deleteItem(\'property\', ${p.id})"><i class="fas fa-trash"></i></button><button class="action-icon" onclick="toggleFeatured(${p.id})"><i class="fas fa-star"></i></button><select style="background:var(--bg-dark);color:#fff;border:1px solid var(--border-color);border-radius:6px;padding:4px;font-size:0.75rem;" onchange="changeStatus(${p.id}, this.value)"><option ${p.status==='متاحة'?'selected':''}>متاحة</option><option ${p.status==='محجوز'?'selected':''}>محجوز</option><option ${p.status==='مباع'?'selected':''}>مباع</option><option ${p.status==='مؤجر'?'selected':''}>مؤجر</option></select></div></td>`).join('')}</tbody></table>`;
             }
 
             window.filterProperties = (filter, el) => {
@@ -1464,10 +1518,11 @@
             window.resetAllData = resetAllData;
             window.saveAdvancedSettings = saveAdvancedSettings;
             window.previewImage = previewImage;
+            window.previewVideo = previewVideo; // NEW
 
             renderAdminSelection();
             if (checkAuth()) initDashboard();
-            console.log('✅ نظام متعدد المسؤولين جاهز مع إعدادات متكاملة + مزرعة + رفع الصور');
+            console.log('✅ نظام متعدد المسؤولين جاهز مع إعدادات متكاملة + مزرعة + رفع الصور والفيديو');
         })();
     </script>
 </body>
