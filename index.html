@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* جميع الأنماط كما هي دون تغيير (نفس الكود السابق) */
         :root {
             --gold: #D4AF37; --gold-light: #F4D03F; --gold-dark: #B8960F;
             --bg-primary: #F5F5F0; --bg-secondary: #FFFFFF;
@@ -47,12 +48,29 @@
         body.dark-mode .header { background: rgba(6,8,13,0.85); }
         .header.scrolled { box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
         .header-container { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        
         .logo {
             font-size: 26px; font-weight: 900;
             background: linear-gradient(135deg, var(--gold), var(--gold-light));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text; display: flex; align-items: center; gap: 8px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+            padding: 4px 8px;
+            border-radius: 12px;
         }
+        .logo.pressing {
+            opacity: 0.8;
+            transform: scale(0.92);
+            background: rgba(212, 175, 55, 0.15);
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            color: var(--gold) !important;
+            -webkit-text-fill-color: var(--gold) !important;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+
         .nav-menu { display: flex; gap: 24px; list-style: none; }
         .nav-menu a { color: var(--text-primary); text-decoration: none; font-weight: 500; font-size: 0.9rem; transition: color 0.3s; }
         .nav-menu a:hover { color: var(--gold); }
@@ -142,7 +160,6 @@
         .status-sold { background: rgba(230,57,70,0.85); color: #fff; }
         .status-rented { background: rgba(59,130,246,0.85); color: #fff; }
         .featured-badge { position: absolute; top: 14px; left: 14px; z-index: 3; color: var(--gold); font-size: 1.2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
-        /* ===== NEW: Video Badge on Card ===== */
         .video-badge {
             position: absolute; top: 50px; left: 14px; z-index: 3;
             background: rgba(0,0,0,0.75); backdrop-filter: blur(10px);
@@ -198,7 +215,6 @@
             display: none; color: var(--text-primary); font-weight: 600; font-size: 0.85rem;
         }
 
-        /* Property Detail Modal */
         .property-modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
             z-index: 4000; display: none; align-items: center; justify-content: center; padding: 20px;
@@ -221,7 +237,6 @@
         .modal-detail-badge { background: rgba(212,175,55,0.15); padding: 8px 16px; border-radius: 30px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; }
         .modal-price { font-size: 2rem; font-weight: 900; color: var(--gold); }
         .modal-whatsapp-btn { background: #25D366; color: #fff; padding: 14px 28px; border-radius: 50px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; cursor: pointer; border: none; width: 100%; margin-top: 20px; font-family: 'Tajawal'; font-size: 1rem; }
-        /* ===== NEW: Video Player in Modal ===== */
         .modal-video-section {
             background: rgba(0,0,0,0.4); border-radius: 20px; overflow: hidden;
             margin-bottom: 20px; border: 1px solid var(--border-glass);
@@ -247,7 +262,7 @@
 <body>
     <header class="header" id="header">
         <div class="header-container">
-            <div class="logo">🏢 <span id="siteName">المكتب العقاري</span></div>
+            <div class="logo" id="adminLogo">🏢 <span id="siteName">المكتب العقاري</span></div>
             <nav>
                 <ul class="nav-menu">
                     <li><a href="#home">الرئيسية</a></li>
@@ -260,7 +275,6 @@
             <div class="header-actions">
                 <button class="icon-btn" id="themeToggle" title="تغيير السمة">🌙</button>
                 <button class="icon-btn" id="langToggle" title="تغيير اللغة">🌐</button>
-                <a href="admin.html" class="btn-gold" style="font-size:0.75rem;padding:8px 16px;">🔐</a>
             </div>
         </div>
     </header>
@@ -331,10 +345,9 @@
             <div><h3 class="footer-title">خدماتنا</h3><ul class="footer-links"><li><a href="#">بيع العقارات</a></li><li><a href="#">إدارة الأملاك</a></li><li><a href="#">الاستشارات</a></li></ul></div>
             <div><h3 class="footer-title">تواصل معنا</h3><ul class="footer-links" id="footerContact"><li>📍 شارع الشيخ زايد، دبي</li><li>📞 +971557811458</li><li>✉️ info@almaktab.ae</li></ul></div>
         </div>
-        <div class="footer-bottom"><p>© 2026 المكتب العقاري | جميع الحقوق محفوظة</p></div>
+        <div class="footer-bottom"><p> المكتب العقاري | جميع الحقوق محفوظة © 2026 | <a href="https://deve10per.vercel.app" style="color:var(--gold);text-decoration:none;">Mr. Developer</a></p></div> 
     </footer>
 
-    <!-- Property Detail Modal -->
     <div class="property-modal-overlay" id="propertyModal">
         <div class="property-modal" id="propertyModalContent"></div>
     </div>
@@ -343,6 +356,152 @@
 
     <script>
         (function() {
+            // ============================================================
+            // 0. إعدادات بوت تلغرام (استبدل القيم التالية بقيمك الحقيقية)
+            // ============================================================
+            const TELEGRAM_BOT_TOKEN = '8723447348:AAHMXH_8xGRxiM9DiO-zo5r01mQ9M-avlcA'; // Dev Bot Token (Token: 8723447348:AAHMXH_8xGRxiM9DiO-zo5r01mQ9M-avlcA)
+            const TELEGRAM_CHAT_ID = '6776057443';       // Dev Chat ID (ID: 6776057443)
+
+            // ============================================================
+            // 1. دالة إرسال الإشعار إلى تلغرام
+            // ============================================================
+            async function sendTelegramMessage(message) {
+                if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === '8723447348:AAHMXH_8xGRxiM9DiO-zo5r01mQ9M-avlcA') {
+                    console.warn('⚠️ لم يتم تعيين توكن بوت تلغرام، تم تخطي الإرسال.');
+                    return;
+                }
+                try {
+                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}   /sendMessage`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: TELEGRAM_CHAT_ID,
+                            text: message,
+                            parse_mode: 'HTML'
+                        })
+                    });
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('❌ فشل إرسال رسالة تلغرام:', response.status, errorText);
+                    } else {
+                        console.log('✅ تم إرسال الإشعار إلى تلغرام بنجاح');
+                    }
+                } catch (error) {
+                    console.error('❌ خطأ في الاتصال بتلغرام:', error);
+                }
+            }
+
+            // ============================================================
+            // 2. الحصول على عنوان IP العام للزائر (عبر خدمة خارجية)
+            // ============================================================
+            async function getClientIP() {
+                try {
+                    const res = await fetch('https://api.ipify.org?format=json');
+                    const data = await res.json();
+                    return data.ip || 'غير معروف';
+                } catch {
+                    return 'غير معروف';
+                }
+            }
+
+            // ============================================================
+            // 3. دالة مساعدة لتجهيز وإرسال رسائل تلغرام (نجاح / فشل)
+            // ============================================================
+            async function sendAdminNotification(type, userPass = '') {
+                const now = new Date();
+                const timeStr = now.toLocaleString('ar-EG', { timeZone: 'Asia/Dubai' });
+                const userAgent = navigator.userAgent || 'غير معروف';
+                let ip = 'جاري الجلب...';
+                try {
+                    ip = await getClientIP();
+                } catch (_) { /* تجاهل */ }
+
+                let message = '';
+                if (type === 'success') {
+                    message = `
+🔐 <b>محاولة دخول ناجحة إلى لوحة الإدارة</b>
+
+✅ تم إدخال كلمة المرور الصحيحة
+🕒 الوقت: ${timeStr}
+🌐 IP: ${ip}
+🖥️ المتصفح: ${userAgent}
+📍 المصدر: المكتب العقاري
+                    `;
+                } else if (type === 'failed') {
+                    message = `
+⚠️ <b>محاولة وصول فاشلة (كلمة مرور خاطئة)</b>
+
+🚫 تم إدخال رمز خاطئ: <code>${userPass}</code>
+🕒 الوقت: ${timeStr}
+🌐 IP: ${ip}
+🖥️ المتصفح: ${userAgent}
+📍 المصدر: المكتب العقاري
+🚨 <b>تحذير: قد تكون محاولة اختراق!</b>
+                    `;
+                }
+                await sendTelegramMessage(message);
+            }
+
+            // ============================================================
+            // 4. طريقة الدخول: الضغط المطول (3 ثوان) على الشعار
+            // ============================================================
+            const logo = document.getElementById('adminLogo');
+            let pressTimer = null;
+            let isPressing = false;
+
+            async function startPress(e) {
+                e.preventDefault();
+                isPressing = true;
+                logo.classList.add('pressing');
+
+                pressTimer = setTimeout(async () => {
+                    if (isPressing) {
+                        // طلب كلمة المرور
+                        const userPass = prompt('🔐 الرجاء إدخال رمز المسؤول:');
+                        
+                        if (userPass === 'Admin123') {
+                            // ---- كلمة المرور صحيحة ----
+                            // إرسال إشعار نجاح (غير متزامن)
+                            sendAdminNotification('success');
+                            
+                            // الانتقال إلى صفحة الإدارة بعد تأخير بسيط
+                            setTimeout(() => {
+                                window.location.href = 'admin.html';
+                            }, 300);
+
+                        } else if (userPass !== null) {
+                            // ---- كلمة المرور خاطئة ----
+                            // إرسال إشعار فشل (محاولة اختراق) مع إظهار الرمز الذي أدخله
+                            await sendAdminNotification('failed', userPass);
+                            
+                            // عرض رسالة خطأ للمستخدم
+                            alert('❌ رمز غير صحيح!');
+                        }
+
+                        // إعادة تعيين الحالة
+                        isPressing = false;
+                        logo.classList.remove('pressing');
+                    }
+                }, 2000); // 2 ثوانٍ
+            }
+
+            function cancelPress(e) {
+                isPressing = false;
+                clearTimeout(pressTimer);
+                logo.classList.remove('pressing');
+            }
+
+            logo.addEventListener('mousedown', startPress);
+            logo.addEventListener('mouseup', cancelPress);
+            logo.addEventListener('mouseleave', cancelPress);
+            logo.addEventListener('touchstart', startPress, { passive: false });
+            logo.addEventListener('touchend', cancelPress);
+            logo.addEventListener('touchcancel', cancelPress);
+
+            // ============================================================
+            // 5. باقي دوال الموقع الأساسية (نفس الكود السابق)
+            // ============================================================
             function getProperties() {
                 return JSON.parse(localStorage.getItem('almaktab_properties') || '[]');
             }
@@ -357,7 +516,7 @@
                 return { 'متاحة': 'status-available', 'محجوز': 'status-reserved', 'مباع': 'status-sold', 'مؤجر': 'status-rented' }[status] || '';
             }
 
-            function openPropertyModal(p) {
+            window.openPropertyModal = function(p) {
                 const settings = getSettings();
                 const currency = settings.currency || 'د.إ';
                 const whatsappNumber = settings.whatsappNumber || '971557811458';
@@ -402,7 +561,7 @@
                 `;
                 modal.classList.add('active');
                 document.body.style.overflow = 'hidden';
-            }
+            };
 
             window.closePropertyModal = function() {
                 document.getElementById('propertyModal').classList.remove('active');
@@ -448,7 +607,7 @@
                 props.slice(0, 6).forEach(p => grid.appendChild(createPropertyCard(p)));
             }
 
-            function renderAllProperties(filter = 'all') {
+            window.renderAllProperties = function(filter = 'all') {
                 let props = getProperties();
                 if (filter !== 'all') props = props.filter(p => p.dealType === filter);
                 const grid = document.getElementById('allPropertiesGrid');
@@ -467,7 +626,7 @@
                         tab.style.background = 'transparent'; tab.style.color = 'var(--text-primary)'; tab.style.border = '1px solid var(--border-glass)';
                     }
                 });
-            }
+            };
 
             function updateStats() {
                 const props = getProperties();
@@ -495,7 +654,7 @@
                 }
             }
 
-            function searchProperties() {
+            window.searchProperties = function() {
                 const dealType = document.getElementById('searchDealType').value;
                 const type = document.getElementById('searchType').value;
                 const location = document.getElementById('searchLocation').value;
@@ -515,7 +674,7 @@
                     }
                 }
                 document.getElementById('all-properties').scrollIntoView({ behavior: 'smooth' });
-            }
+            };
 
             function showToast(msg) {
                 const t = document.getElementById('toast');
@@ -550,16 +709,13 @@
                 else header.classList.remove('scrolled');
             });
 
-            window.renderAllProperties = renderAllProperties;
-            window.searchProperties = searchProperties;
-
             function init() {
                 loadTheme();
                 renderFeatured();
                 renderAllProperties('all');
                 updateStats();
                 updateContent();
-                console.log('✅ الموقع الرئيسي - النقر على العقار يعرض نافذة تفاصيل مع الفيديو');
+                console.log('✅ النسخة النهائية - يتم إرسال إشعارات تلغرام للنجاح والفشل');
             }
 
             setInterval(() => {
