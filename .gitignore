@@ -28,3 +28,6 @@ next-env.d.ts
 /coverage
 /playwright-report
 /test-results
+
+# Source archives (served for download; regenerated per release)
+/public/*.zip
