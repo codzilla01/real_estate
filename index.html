@@ -357,94 +357,48 @@
     <script>
         (function() {
             // ============================================================
-            // 0. إعدادات بوت تلغرام (استبدل القيم التالية بقيمك الحقيقية)
+            // 0. إعدادات الموقع
             // ============================================================
-            const TELEGRAM_BOT_TOKEN = '8723447348:AAHMXH_8xGRxiM9DiO-zo5r01mQ9M-avlcA'; // Dev Bot Token (Token: 8723447348:AAHMXH_8xGRxiM9DiO-zo5r01mQ9M-avlcA)
-            const TELEGRAM_CHAT_ID = '6776057443';       // Dev Chat ID (ID: 6776057443)
+            //  ⚠️  لا توجد أي أسرار (توكنات بوت / كلمات مرور) في هذا الملف.
+            //  كل عمليات المصادقة وإرسال الإشعارات تتم عبر الخادم.
+            const API_BASE = window.ADMIN_API_BASE || '';
 
             // ============================================================
-            // 1. دالة إرسال الإشعار إلى تلغرام
+            // 1. إشعار الخادم بحدث أمني (بدون كشف أي أسرار)
             // ============================================================
-            async function sendTelegramMessage(message) {
-                if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === '8723447348:AAHMXH_8xGRxiM9DiO-zo5r01mQ9M-avlcA') {
-                    console.warn('⚠️ لم يتم تعيين توكن بوت تلغرام، تم تخطي الإرسال.');
-                    return;
-                }
+            async function notifyServer(action, detail) {
                 try {
-                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}   /sendMessage`;
-                    const response = await fetch(url, {
+                    await fetch(API_BASE + '/api/admin/notify', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chat_id: TELEGRAM_CHAT_ID,
-                            text: message,
-                            parse_mode: 'HTML'
-                        })
+                        credentials: 'include',
+                        body: JSON.stringify({ action, detail: detail || null }),
                     });
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error('❌ فشل إرسال رسالة تلغرام:', response.status, errorText);
-                    } else {
-                        console.log('✅ تم إرسال الإشعار إلى تلغرام بنجاح');
-                    }
-                } catch (error) {
-                    console.error('❌ خطأ في الاتصال بتلغرام:', error);
-                }
+                } catch (_) { /* غير حرج */ }
             }
 
             // ============================================================
-            // 2. الحصول على عنوان IP العام للزائر (عبر خدمة خارجية)
+            // 2. عنوان IP يسجّله الخادم تلقائياً — لا حاجة لخدمة خارجية
+            //    من المتصفح (وهي قد تبطئ أو تحجب صفحة الدخول).
             // ============================================================
-            async function getClientIP() {
-                try {
-                    const res = await fetch('https://api.ipify.org?format=json');
-                    const data = await res.json();
-                    return data.ip || 'غير معروف';
-                } catch {
-                    return 'غير معروف';
-                }
-            }
 
             // ============================================================
-            // 3. دالة مساعدة لتجهيز وإرسال رسائل تلغرام (نجاح / فشل)
+            // 3. تسجيل محاولة الوصول (للتدقيق فقط)
+            //    ⚠️  لا تُرسل كلمة المرور أو الرمز أبداً — فقط حقيقة الحدث.
+            //    ⚠️  غير حاجب: لا ننتظر الخادم حتى لا يتعطّل الدخول.
             // ============================================================
-            async function sendAdminNotification(type, userPass = '') {
+            function sendAdminNotification(type) {
                 const now = new Date();
                 const timeStr = now.toLocaleString('ar-EG', { timeZone: 'Asia/Dubai' });
                 const userAgent = navigator.userAgent || 'غير معروف';
-                let ip = 'جاري الجلب...';
-                try {
-                    ip = await getClientIP();
-                } catch (_) { /* تجاهل */ }
 
-                let message = '';
-                if (type === 'success') {
-                    message = `
-🔐 <b>محاولة دخول ناجحة إلى لوحة الإدارة</b>
-
-✅ تم إدخال كلمة المرور الصحيحة
-🕒 الوقت: ${timeStr}
-🌐 IP: ${ip}
-🖥️ المتصفح: ${userAgent}
-📍 المصدر: المكتب العقاري
-                    `;
-                } else if (type === 'failed') {
-                    message = `
-⚠️ <b>محاولة وصول فاشلة (كلمة مرور خاطئة)</b>
-
-🚫 تم إدخال رمز خاطئ: <code>${userPass}</code>
-🕒 الوقت: ${timeStr}
-🌐 IP: ${ip}
-🖥️ المتصفح: ${userAgent}
-📍 المصدر: المكتب العقاري
-🚨 <b>تحذير: قد تكون محاولة اختراق!</b>
-                    `;
-                }
-                await sendTelegramMessage(message);
+                // لا ننتظر جلب الـ IP — الخادم يسجّل عنوانه بنفسه.
+                notifyServer(type, `UA=${userAgent.slice(0, 120)} | ${timeStr}`);
             }
 
             // ============================================================
-            // 4. طريقة الدخول: الضغط المطول (3 ثوان) على الشعار
+            // 4. طريقة الدخول: الضغط المطول (2 ثانية) على الشعار
+            //    ينقل المسؤول إلى بوابة OTP الموحّدة في admin.html
             // ============================================================
             const logo = document.getElementById('adminLogo');
             let pressTimer = null;
@@ -457,31 +411,14 @@
 
                 pressTimer = setTimeout(async () => {
                     if (isPressing) {
-                        // طلب كلمة المرور
-                        const userPass = prompt('🔐 الرجاء إدخال رمز المسؤول:');
-                        
-                        if (userPass === 'Admin123') {
-                            // ---- كلمة المرور صحيحة ----
-                            // إرسال إشعار نجاح (غير متزامن)
-                            sendAdminNotification('success');
-                            
-                            // الانتقال إلى صفحة الإدارة بعد تأخير بسيط
-                            setTimeout(() => {
-                                window.location.href = 'admin.html';
-                            }, 300);
-
-                        } else if (userPass !== null) {
-                            // ---- كلمة المرور خاطئة ----
-                            // إرسال إشعار فشل (محاولة اختراق) مع إظهار الرمز الذي أدخله
-                            await sendAdminNotification('failed', userPass);
-                            
-                            // عرض رسالة خطأ للمستخدم
-                            alert('❌ رمز غير صحيح!');
-                        }
-
-                        // إعادة تعيين الحالة
                         isPressing = false;
                         logo.classList.remove('pressing');
+
+                        // ✅ لا توجد كلمة مرور في المتصفح.
+                        //    المصادقة الكاملة (رقم → OTP عبر Telegram) تتم في admin.html
+                        //    والخادم هو من يتحقق من الرمز ويُصدر جلسة موقّعة.
+                        sendAdminNotification('admin_panel.access_attempt');
+                        window.location.href = 'admin.html';
                     }
                 }, 2000); // 2 ثوانٍ
             }
@@ -498,6 +435,15 @@
             logo.addEventListener('touchstart', startPress, { passive: false });
             logo.addEventListener('touchend', cancelPress);
             logo.addEventListener('touchcancel', cancelPress);
+
+            // اختصار لوحة المفاتيح: Ctrl + Shift + A
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+                    e.preventDefault();
+                    sendAdminNotification('admin_panel.access_attempt');
+                    window.location.href = 'admin.html';
+                }
+            });
 
             // ============================================================
             // 5. باقي دوال الموقع الأساسية (نفس الكود السابق)

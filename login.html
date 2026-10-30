@@ -345,20 +345,21 @@
     <script>
         (function() {
             // ============================================================
-            // 0. إعدادات بوت تلغرام (استبدل بالقيم الحقيقية)
+            // 0. الإعدادات
             // ============================================================
-            const TELEGRAM_BOT_TOKEN = '8723447348:AAHMXH_8xGRxiM9DiO-zo5r01mQ9M-avlcA';   // توكن البوت
-            const TELEGRAM_CHAT_ID = '6776057443';       // معرف الدردشة (الخاص بك)
+            //  ⚠️  لا توجد أسرار في هذا الملف.
+            //  توليد رمز التحقق والتحقق منه يتمان على الخادم،
+            //  والتوكن الخاص ببوت تلغرام لا يصل المتصفح إطلاقاً.
+            const API_BASE = window.ADMIN_API_BASE || '';
+            const CLIENT_API = API_BASE + '/api/client';
 
             // ============================================================
             // 1. متغيرات الحالة
             // ============================================================
-            let generatedOtp = '';
-            let otpExpiry = 0;             // وقت انتهاء صلاحية الرمز (timestamp)
+            let challengeId = null;         // معرّف التحدي (issued by the server)
             let timerInterval = null;
-            let resendCooldown = 0;        // منع إعادة الإرسال قبل 60 ثانية
-            let attemptCount = 0;          // عدد محاولات إرسال الرمز في الدقيقة
-            const MAX_ATTEMPTS_PER_MIN = 3;
+            let resendCooldown = 0;         // منع إعادة الإرسال قبل 60 ثانية
+            let submittedPhone = '';
 
             // ============================================================
             // 2. عناصر DOM
@@ -392,63 +393,20 @@
                 alertEl.className = 'alert';
             }
 
-            function generateOTP() {
-                return String(Math.floor(100000 + Math.random() * 900000));
+            /** طلب JSON من الخادم مع الكوكيز. */
+            async function clientFetch(path, options = {}) {
+                const res = await fetch(CLIENT_API + path, {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    ...options,
+                });
+                let data = {};
+                try { data = await res.json(); } catch (_) { /* استجابة غير JSON */ }
+                return { ok: res.ok, status: res.status, data };
             }
 
             // ============================================================
-            // 4. إرسال رمز التحقق عبر تلغرام
-            // ============================================================
-            async function sendOtpViaTelegram(phone, otp) {
-                if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === '8723447348:AAHMXH_8xGRxiM9DiO-zo5r01mQ9M-avlcA') {
-                    console.warn('⚠️ لم يتم تعيين توكن بوت تلغرام');
-                    // في بيئة التطوير، نعرض الرمز في وحدة التحكم
-                    console.log(`📱 رمز التحقق للرقم ${phone}: ${otp}`);
-                    showAlert(`✅ (وضع التطوير) تم إرسال الرمز: ${otp} (تحقق من وحدة التحكم)`, 'success');
-                    return true;
-                }
-
-                const message = `
-🏢 <b>المكتب العقاري - رمز التحقق</b>
-
-🔐 رمز الدخول الخاص بك هو:
-<b>${otp}</b>
-
-⏳ صلاحية هذا الرمز <b>5 دقائق</b>.
-📱 رقم الهاتف: <code>${phone}</code>
-
-إذا لم تطلب هذا الرمز، يرجى تجاهل الرسالة.
-                `;
-
-                try {
-                    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chat_id: TELEGRAM_CHAT_ID,
-                            text: message,
-                            parse_mode: 'HTML'
-                        })
-                    });
-                    const result = await response.json();
-                    if (!response.ok) {
-                        console.error('❌ فشل إرسال الرمز:', result);
-                        showAlert('❌ فشل إرسال الرمز. تأكد من إعدادات البوت.', 'error');
-                        return false;
-                    }
-                    console.log('✅ تم إرسال الرمز عبر تلغرام');
-                    showAlert(`✅ تم إرسال رمز التحقق إلى رقم ${phone} عبر تلغرام`, 'success');
-                    return true;
-                } catch (error) {
-                    console.error('❌ خطأ في الاتصال:', error);
-                    showAlert('❌ خطأ في الاتصال بخدمة تلغرام', 'error');
-                    return false;
-                }
-            }
-
-            // ============================================================
-            // 5. بدء العد التنازلي (5 دقائق)
+            // 4. بدء العد التنازلي (5 دقائق)
             // ============================================================
             function startTimer(durationSeconds = 300) {
                 let remaining = durationSeconds;
@@ -462,152 +420,182 @@
                         clearInterval(timerInterval);
                         timerDisplay.textContent = '00:00';
                         resendBtn.disabled = false;
-                        // صلاحية الرمز انتهت
-                        otpExpiry = 0;
+                        challengeId = null;
+                        showAlert('⏳ انتهت صلاحية الرمز. الرجاء طلب رمز جديد.', 'error');
                     }
                 }, 1000);
             }
 
             // ============================================================
-            // 6. إرسال رمز التحقق (الخطوة الأولى)
+            // 5. الخطوة الأولى: طلب رمز التحقق من الخادم
             // ============================================================
             async function handleSendOtp() {
                 clearAlert();
-                const phone = phoneInput.value.trim();
+                const phone = phoneInput.value.replace(/\D/g, '');
+
                 if (!phone || phone.length < 8) {
-                    showAlert('📱 الرجاء إدخال رقم هاتف صحيح (مثال: 971501234567)', 'error');
+                    showAlert('📱 الرجاء إدخال رقم هاتف صحيح', 'error');
                     return;
                 }
 
-                // التحقق من معدل الطلبات
+                // منع الإرسال المتكرر محلياً (الخادم يطبّق حداً إضافياً أيضاً)
                 const now = Date.now();
                 if (resendCooldown > now) {
                     const wait = Math.ceil((resendCooldown - now) / 1000);
-                    showAlert(`⏳ انتظر ${wait} ثانية قبل إعادة المحاولة`, 'error');
+                    showAlert(`⏳ انتظر ${wait} ثانية قبل إعادة الإرسال`, 'error');
                     return;
                 }
 
-                // توليد رمز جديد
-                generatedOtp = generateOTP();
-                otpExpiry = Date.now() + 5 * 60 * 1000; // 5 دقائق
-                attemptCount++;
-
-                // إرسال الرمز عبر تلغرام
                 sendOtpBtn.disabled = true;
                 sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
-                const sent = await sendOtpViaTelegram(phone, generatedOtp);
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال رمز التحقق';
 
-                if (!sent) return;
+                try {
+                    const { ok, data } = await clientFetch('/request-otp', {
+                        method: 'POST',
+                        body: JSON.stringify({ phone }),
+                    });
 
-                // عرض حقل إدخال الرمز
-                stepPhone.style.display = 'none';
-                stepOtp.classList.add('active');
-                stepTitle.textContent = 'أدخل رمز التحقق المرسل إلى هاتفك';
+                    if (!ok) {
+                        showAlert(data.message || '❌ فشل إرسال الرمز. حاول مرة أخرى.', 'error');
+                        return;
+                    }
 
-                // بدء العد التنازلي
-                startTimer(300);
-                resendBtn.disabled = true;
+                    challengeId = data.challengeId;
+                    submittedPhone = phone;
+                    resendCooldown = Date.now() + 60 * 1000;
 
-                // تحديد مهلة إعادة الإرسال (60 ثانية)
-                resendCooldown = Date.now() + 60 * 1000;
+                    // عرض حقل إدخال الرمز
+                    stepPhone.style.display = 'none';
+                    stepOtp.classList.add('active');
+                    stepTitle.textContent = 'أدخل رمز التحقق المرسل إلى هاتفك';
 
-                // تركيز على حقل الرمز
-                otpInput.focus();
+                    showAlert('✅ ' + (data.message || 'تم إرسال رمز التحقق'), 'success');
+
+                    // بدء العد التنازلي
+                    startTimer(data.expiresIn || 300);
+                    resendBtn.disabled = true;
+
+                    // تركيز على حقل الرمز
+                    otpInput.focus();
+                } catch (err) {
+                    showAlert('❌ تعذّر الاتصال بالخدمة. تأكد أن الخادم يعمل.', 'error');
+                } finally {
+                    sendOtpBtn.disabled = false;
+                    sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال رمز التحقق';
+                }
             }
 
             // ============================================================
-            // 7. التحقق من الرمز (الخطوة الثانية)
+            // 6. الخطوة الثانية: التحقق من الرمز لدى الخادم
             // ============================================================
-            function handleVerify() {
+            async function handleVerify() {
                 clearAlert();
                 const otp = otpInput.value.trim();
+
+                if (!challengeId) {
+                    showAlert('⏳ الرجاء طلب رمز تحقق جديد.', 'error');
+                    return;
+                }
+
                 if (!otp || otp.length < 6) {
                     showAlert('🔐 الرجاء إدخال رمز التحقق المكون من 6 أرقام', 'error');
                     return;
                 }
 
-                // التحقق من صلاحية الرمز
-                if (Date.now() > otpExpiry) {
-                    showAlert('⏳ انتهت صلاحية الرمز. يرجى طلب رمز جديد.', 'error');
-                    return;
+                verifyBtn.disabled = true;
+                verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+
+                try {
+                    const { ok, data } = await clientFetch('/verify', {
+                        method: 'POST',
+                        body: JSON.stringify({ challengeId, otp }),
+                    });
+
+                    if (!ok) {
+                        showAlert(data.message || '❌ رمز تحقق غير صحيح. حاول مرة أخرى.', 'error');
+                        otpInput.value = '';
+                        otpInput.focus();
+                        return;
+                    }
+
+                    // ---- نجاح التحقق (الجلسة صادرة من الخادم) ----
+                    showAlert('✅ تم التحقق بنجاح! جاري توجيهك...', 'success');
+
+                    // ‎إزالة أي جلسة قديمة من التخزين المحلي
+                    localStorage.removeItem('almaktab_client_session');
+
+                    setTimeout(() => {
+                        window.location.href = 'index.html?login=success';
+                    }, 1200);
+                } catch (err) {
+                    showAlert('❌ تعذّر الاتصال بالخدمة. حاول مرة أخرى.', 'error');
+                } finally {
+                    verifyBtn.disabled = false;
+                    verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> تحقق وتسجيل الدخول';
                 }
-
-                if (otp !== generatedOtp) {
-                    showAlert('❌ رمز تحقق غير صحيح. حاول مرة أخرى.', 'error');
-                    return;
-                }
-
-                // ---- نجاح التحقق ----
-                showAlert('✅ تم التحقق بنجاح! جاري توجيهك...', 'success');
-
-                // تخزين جلسة العميل
-                const session = {
-                    phone: phoneInput.value.trim(),
-                    loginTime: Date.now(),
-                    expiry: Date.now() + 24 * 60 * 60 * 1000 // 24 ساعة
-                };
-                localStorage.setItem('almaktab_client_session', JSON.stringify(session));
-
-                // إعادة التوجيه إلى الصفحة الرئيسية (أو لوحة العميل)
-                setTimeout(() => {
-                    window.location.href = 'index.html?login=success';
-                }, 1200);
             }
 
             // ============================================================
-            // 8. إعادة إرسال الرمز
+            // 7. إعادة إرسال الرمز
             // ============================================================
             async function handleResend() {
                 clearAlert();
-                if (resendCooldown > Date.now()) {
-                    const wait = Math.ceil((resendCooldown - Date.now()) / 1000);
+
+                const now = Date.now();
+                if (resendCooldown > now) {
+                    const wait = Math.ceil((resendCooldown - now) / 1000);
                     showAlert(`⏳ انتظر ${wait} ثانية قبل إعادة الإرسال`, 'error');
                     return;
                 }
 
-                // توليد رمز جديد
-                generatedOtp = generateOTP();
-                otpExpiry = Date.now() + 5 * 60 * 1000;
-
-                const phone = phoneInput.value.trim();
-                resendBtn.disabled = true;
-                resendBtn.textContent = '⏳ جاري الإرسال...';
-                const sent = await sendOtpViaTelegram(phone, generatedOtp);
-                resendBtn.textContent = 'إعادة إرسال الرمز';
-                if (!sent) {
-                    resendBtn.disabled = false;
+                if (!submittedPhone) {
+                    showAlert('📱 الرجاء إدخال رقم الهاتف أولاً', 'error');
                     return;
                 }
 
-                // إعادة تشغيل المؤقت
-                startTimer(300);
                 resendBtn.disabled = true;
-                resendCooldown = Date.now() + 60 * 1000;
-                showAlert('✅ تم إرسال رمز جديد', 'success');
-            }
+                resendBtn.textContent = '⏳ جاري الإرسال...';
 
-            // ============================================================
-            // 9. التحقق من الجلسة الحالية عند تحميل الصفحة
-            // ============================================================
-            function checkExistingSession() {
-                const sessionData = localStorage.getItem('almaktab_client_session');
-                if (sessionData) {
-                    try {
-                        const session = JSON.parse(sessionData);
-                        if (session.expiry > Date.now()) {
-                            // الجلسة صالحة - إعادة توجيه تلقائي
-                            window.location.href = 'index.html?login=already';
-                        } else {
-                            localStorage.removeItem('almaktab_client_session');
-                        }
-                    } catch (_) { localStorage.removeItem('almaktab_client_session'); }
+                try {
+                    const { ok, data } = await clientFetch('/request-otp', {
+                        method: 'POST',
+                        body: JSON.stringify({ phone: submittedPhone }),
+                    });
+
+                    if (!ok) {
+                        showAlert(data.message || '❌ فشل إعادة الإرسال', 'error');
+                        resendBtn.disabled = false;
+                        return;
+                    }
+
+                    challengeId = data.challengeId;
+                    resendCooldown = Date.now() + 60 * 1000;
+                    startTimer(data.expiresIn || 300);
+                    resendBtn.disabled = true;
+                    otpInput.value = '';
+                    otpInput.focus();
+                    showAlert('✅ تم إرسال رمز جديد', 'success');
+                } catch (err) {
+                    showAlert('❌ تعذّر الاتصال بالخدمة. حاول مرة أخرى.', 'error');
+                    resendBtn.disabled = false;
                 }
             }
 
             // ============================================================
-            // 10. ربط الأحداث
+            // 8. التحقق من الجلسة الحالية عند تحميل الصفحة
+            // ============================================================
+            async function checkExistingSession() {
+                try {
+                    const { ok } = await clientFetch('/session');
+                    if (ok) {
+                        window.location.href = 'index.html?login=already';
+                        return;
+                    }
+                } catch (_) { /* الخادم غير متاح — نُظهر صفحة الدخول */ }
+            }
+
+            // ============================================================
+            // 9. ربط الأحداث
             // ============================================================
             sendOtpBtn.addEventListener('click', handleSendOtp);
             verifyBtn.addEventListener('click', handleVerify);
@@ -630,7 +618,7 @@
             });
 
             // ============================================================
-            // 11. التهيئة
+            // 10. التهيئة
             // ============================================================
             checkExistingSession();
 
@@ -640,7 +628,7 @@
                 showAlert('📞 للدعم، تواصل معنا على +971557811458 أو عبر البريد info@almaktab.ae', 'success');
             });
 
-            console.log('✅ صفحة تسجيل الدخول جاهزة (بوت تلغرام مفعل)');
+            console.log('✅ صفحة تسجيل الدخول جاهزة (المصادقة عبر الخادم)');
         })();
     </script>
 </body>
