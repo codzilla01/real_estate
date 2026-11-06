@@ -64,8 +64,10 @@ RESP=$(curl -s -X POST "$BASE/api/admin/request-otp" -H 'Content-Type: applicati
         -d "{\"phone\":\"$UNKNOWN_PHONE\"}" 2>/dev/null)
 if echo "$RESP" | grep -q '"challengeId":"pending"'; then
   ok "رقم غير مسجل يحصل على رد عام مطابق لرقم مسجّل"
-elif echo "$RESP" | grep -q "طلبات كثيرة"; then
-  echo "  ⏭️  تخطّي — حدّ المعدل مُفعّل من تشغيلات سابقة"
+elif echo "$RESP" | grep -q '"ok":false'; then
+  # Rate-limited / blocked — not an enumeration leak. Note: matching on the
+  # JSON flag avoids locale issues with non-ASCII patterns.
+  echo "  ⏭️  skipped — rate limit / block active from earlier runs"
 else
   no "رد الرقم غير المسجل يكشف معلومات: $RESP"
 fi

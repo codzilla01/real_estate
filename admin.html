@@ -1420,6 +1420,10 @@
             }
 
             function initReportCharts() {
+                if (typeof Chart === 'undefined') {
+                    console.warn('⚠️ Chart.js غير متاح — تم تخطي الرسوم البيانية');
+                    return;
+                }
                 if (charts.types) charts.types.destroy();
                 const typeCounts = {}; properties.forEach(p => { typeCounts[p.type] = (typeCounts[p.type] || 0) + 1; });
                 const ctx = document.getElementById('chartTypes');
@@ -1428,6 +1432,12 @@
 
             function initDashboardCharts() {
                 setTimeout(() => {
+                    // Chart.js comes from a CDN — if it is unavailable the
+                    // dashboard must still work, just without the charts.
+                    if (typeof Chart === 'undefined') {
+                        console.warn('⚠️ Chart.js غير متاح — تم تخطي الرسوم البيانية');
+                        return;
+                    }
                     const ctx = document.getElementById('dashboardMiniChart');
                     if (ctx) new Chart(ctx, { type: 'line', data: { labels: ['يناير','فبراير','مارس','أبريل','مايو'], datasets: [{ data: [12,19,8,15,22], borderColor: '#D4AF37', backgroundColor: 'rgba(212,175,55,0.1)', fill: true }] }, options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } } } });
                 }, 200);

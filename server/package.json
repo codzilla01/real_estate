@@ -7,17 +7,20 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node test/run-tests.js"
+    "test": "node test/run-tests.js",
+    "test:ui": "node test/run-ui-tests.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "cookie-parser": "^1.4.6",
-    "dotenv": "^16.4.5",
     "dotenv": "^18.0.9",
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0"
+  },
+  "devDependencies": {
+    "jsdom": "^31.0.0"
   }
 }

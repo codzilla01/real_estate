@@ -25,6 +25,16 @@ app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
 /* ---------------- Security headers ---------------- */
+// FRAME_ANCESTORS controls who may embed the site (clickjacking protection).
+// Production should keep the default "'none'". Set FRAME_ANCESTORS='self'
+// when the site is served inside an iframe-based preview or portal.
+const frameAncestors = (process.env.FRAME_ANCESTORS || "'none'")
+  .split(',')
+  .map((s) => s.trim().replace(/^['"]|['"]$/g, ''))
+  .filter(Boolean)
+  // A bare "self" must become the CSP keyword "'self'".
+  .map((s) => (s === 'self' ? "'self'" : s));
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -36,14 +46,23 @@ app.use(
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
         imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
         connectSrc: ["'self'"],
-        frameAncestors: ["'none'"],
+        frameAncestors,
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
       },
     },
+    // X-Frame-Options must agree with the CSP frame-ancestors directive.
+    frameguard: false,
     crossOriginEmbedderPolicy: false,
   }),
 );
+
+// Keep X-Frame-Options in sync (some older browsers ignore CSP frame-ancestors).
+app.use((req, res, next) => {
+  const allowSelf = frameAncestors.includes("'self'");
+  res.setHeader('X-Frame-Options', allowSelf ? 'SAMEORIGIN' : 'DENY');
+  next();
+});
 
 app.use(express.json({ limit: '32kb' }));
 app.use(cookieParser());
@@ -112,6 +131,16 @@ app.get('/', (req, res) => {
 
 /* ---------------- Error handling ---------------- */
 app.use((err, req, res, next) => {
+  // Malformed JSON / bad payload: this is a client error (400), not a
+  // server fault. body-parser sets `status`/`statusCode` on the error.
+  const status = err.status || err.statusCode;
+  if (status && status >= 400 && status < 500) {
+    return res.status(status).json({
+      ok: false,
+      message: 'طلب غير صالح',
+    });
+  }
+
   console.error('[server] unhandled error:', err);
   res.status(500).json({ ok: false, message: 'خطأ داخلي في الخادم' });
 });
