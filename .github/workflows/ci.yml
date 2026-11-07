@@ -59,13 +59,14 @@ jobs:
           cp .env.example .env
           sed -i 's/^SESSION_SECRET=.*/SESSION_SECRET=ci_only_secret_abcdefghijklmnopqrstuvwxyz0123456789/' .env
           sed -i 's/^ADMIN1_PASSWORD_HASH=.*/ADMIN1_PASSWORD=ci-only-password/' .env
-          sed -i 's/^FRAME_ANCESTORS=.*/FRAME_ANCESTORS='"'"'none'"'"'/' .env
+          # Replace (not append) so there is exactly one effective value.
+          sed -i "s/^FRAME_ANCESTORS=.*/FRAME_ANCESTORS='none'/" .env
 
       - name: Run the server
         working-directory: server
-        run: node src/server.js &
-        # Give the server time to boot.
-        sleep 5
+        run: |
+          node src/server.js &
+          sleep 5
 
       - name: Security checks
         working-directory: server
