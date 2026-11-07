@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: API + UI tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: API tests
+        working-directory: server
+        run: npm test
+
+      - name: UI tests
+        working-directory: server
+        run: npm run test:ui
+
+  security-check:
+    name: Security scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Prepare .env for the scan
+        working-directory: server
+        run: |
+          cp .env.example .env
+          sed -i 's/^SESSION_SECRET=.*/SESSION_SECRET=ci_only_secret_abcdefghijklmnopqrstuvwxyz0123456789/' .env
+          sed -i 's/^ADMIN1_PASSWORD_HASH=.*/ADMIN1_PASSWORD=ci-only-password/' .env
+          # Replace (not append) so there is exactly one effective value.
+          sed -i "s/^FRAME_ANCESTORS=.*/FRAME_ANCESTORS='none'/" .env
+
+      - name: Run the server
+        working-directory: server
+        run: |
+          node src/server.js &
+          sleep 5
+
+      - name: Security checks
+        working-directory: server
+        env:
+          # Lets the script perform a successful login so a fresh audit log
+          # still records a login.success event.
+          TEST_ADMIN_USER: admin
+          TEST_ADMIN_PASSWORD: ci-only-password
+        run: bash scripts/security-check.sh
+
+  secrets-scan:
+    name: No secrets in client code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fail if a bot token leaked into the HTML
+        run: |
+          if grep -rnE "AA[A-Za-z0-9_-]{30,}" --include="*.html" .; then
+            echo "❌ A Telegram bot token was found in the client code."
+            exit 1
+          fi
+          echo "✅ No bot tokens in client HTML."
+
+      - name: Fail if a .env file was committed
+        run: |
+          if git ls-files | grep -E "(^|/)\.env$"; then
+            echo "❌ A .env file is tracked in git."
+            exit 1
+          fi
+          echo "✅ No .env file is tracked."
+
+      - name: Fail if a password is compared in the browser
+        run: |
+          if grep -rnE "password\s*===|password\s*==\s*['\"]" --include="*.html" .; then
+            echo "❌ A password is compared in client-side JavaScript."
+            exit 1
+          fi
+          echo "✅ No client-side password comparison."

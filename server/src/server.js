@@ -31,8 +31,8 @@ const frameAncestors = (process.env.FRAME_ANCESTORS || "'none'")
   .split(',')
   .map((s) => s.trim().replace(/^['"]|['"]$/g, ''))
   .filter(Boolean)
-  // A bare "self" must become the CSP keyword "'self'".
-  .map((s) => (s === 'self' ? "'self'" : s));
+  // CSP keywords must be single-quoted ("'self'", "'none'", ...).
+  .map((s) => (s === 'self' || s === 'none' ? `'${s}'` : s));
 
 app.use(
   helmet({
@@ -146,6 +146,14 @@ app.use((err, req, res, next) => {
 
 /* ---------------- Startup ---------------- */
 const problems = assertConfig();
+const fatal = problems.filter((p) => p.startsWith('FATAL:'));
+
+if (fatal.length) {
+  console.error('\n❌ Cannot start — fatal configuration problems:\n');
+  for (const p of fatal) console.error(`   • ${p.replace(/^FATAL:\s*/, '')}`);
+  console.error('\n📖 See server/README.md → "قبل النشر" for the required variables.\n');
+  process.exit(1);
+}
 
 app.listen(config.port, '0.0.0.0', () => {
   console.log('─────────────────────────────────────────────');
@@ -153,6 +161,7 @@ app.listen(config.port, '0.0.0.0', () => {
   console.log(`  URL:        http://0.0.0.0:${config.port}`);
   console.log(`  Env:        ${config.env}`);
   console.log(`  Admins:     ${config.admins.length} active`);
+  console.log(`  Clients:    ${config.clients.length} active`);
   console.log(`  Origins:    ${config.allowedOrigins.join(', ')}`);
   console.log('─────────────────────────────────────────────');
 

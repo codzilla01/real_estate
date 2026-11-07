@@ -104,6 +104,13 @@ echo "$HEAD" | grep -qi "content-security-policy" && ok "Content-Security-Policy
 
 echo ""
 echo "═══ 6. سجل التدقيق ═══"
+# Perform a successful login when credentials are known, so that a fresh
+# environment still produces a login.success event to audit.
+if [ -n "${TEST_ADMIN_USER:-}" ] && [ -n "${TEST_ADMIN_PASSWORD:-}" ]; then
+  curl -s -o /dev/null -X POST "$BASE/api/admin/login" -H 'Content-Type: application/json' \
+    -d "{\"username\":\"$TEST_ADMIN_USER\",\"password\":\"$TEST_ADMIN_PASSWORD\"}" 2>/dev/null
+fi
+
 if [ -f data/audit.log ]; then
   ok "audit.log موجود ($(wc -l < data/audit.log) قيد)"
   grep -q "login.success" data/audit.log 2>/dev/null && ok "الدخول الناجح مسجّل" || no "لا يوجد login.success"

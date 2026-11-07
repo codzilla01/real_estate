@@ -22,6 +22,8 @@ const env = {
   PORT,
   NODE_ENV: 'test',
   MOCK_TELEGRAM: 'true',
+  // Ignore the developer's local .env so the test server is fully isolated.
+  SKIP_DOTENV: 'true',
   SESSION_SECRET: 'test_only_secret_abcdefghijklmnopqrstuvwxyz0123456789',
   SECURE_COOKIES: 'false',
   ALLOWED_ORIGINS: `http://localhost:${PORT}`,
