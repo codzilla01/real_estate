@@ -70,6 +70,11 @@ jobs:
 
       - name: Security checks
         working-directory: server
+        env:
+          # Lets the script perform a successful login so a fresh audit log
+          # still records a login.success event.
+          TEST_ADMIN_USER: admin
+          TEST_ADMIN_PASSWORD: ci-only-password
         run: bash scripts/security-check.sh
 
   secrets-scan:
