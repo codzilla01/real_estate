@@ -39,6 +39,16 @@
 
         /* ==================== SECRET PRESS ==================== */
         .secret-press-bar { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: transparent; z-index: 10001; pointer-events: none; }
+        /* ==================== AUTH GATE ==================== */
+        /* The dashboard stays hidden until the server confirms a valid session. */
+        body.auth-pending .sidebar,
+        body.auth-pending .main-content,
+        body.auth-pending .mobile-bottom-nav,
+        body.auth-pending .mobile-menu-toggle { display: none !important; }
+        body.auth-pending .admin-login-overlay { display: flex !important; }
+        .auth-loading { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 40px 0; color: var(--text-secondary); font-size: 0.9rem; }
+        .auth-loading i { animation: authSpin 1s linear infinite; }
+        @keyframes authSpin { to { transform: rotate(360deg); } }
         .secret-press-bar.active { background: rgba(212,175,55,0.3); }
         .secret-press-bar .fill { height: 100%; width: 0%; background: var(--gradient-gold); transition: width 0.05s linear; }
         .secret-hint { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 0.85rem; z-index: 10002; opacity: 0; pointer-events: none; transition: opacity 0.3s; border: 1px solid var(--gold); }
@@ -69,9 +79,6 @@
         .telegram-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; border: none; border-radius: 14px; background: linear-gradient(135deg, #0088cc, #00a8e8); color: #fff; cursor: pointer; font-weight: 700; font-size: 0.95rem; font-family: 'Tajawal', sans-serif; transition: var(--transition); }
         .telegram-btn:hover { background: linear-gradient(135deg, #0099dd, #00b8ff); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,136,204,0.3); }
         .telegram-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .otp-input-group { display: flex; gap: 10px; justify-content: center; margin: 20px 0; flex-wrap: wrap; }
-        .otp-input { width: 48px; height: 56px; text-align: center; font-size: 1.4rem; font-weight: 800; border: 2px solid var(--border-color); border-radius: 12px; background: var(--bg-dark); color: #fff; font-family: monospace; transition: var(--transition); }
-        .otp-input:focus { border-color: var(--gold); box-shadow: 0 0 20px rgba(212,175,55,0.15); outline: none; }
         .timer-display { color: var(--warning); font-size: 0.85rem; margin: 10px 0; }
         .resend-link { color: #0088cc; cursor: pointer; font-size: 0.85rem; } .resend-link.disabled { color: var(--text-secondary); pointer-events: none; }
         .error-msg { color: var(--accent); font-size: 0.85rem; margin-top: 10px; display: none; } .error-msg.show { display: block; }
@@ -203,7 +210,6 @@
             .action-icons { flex-wrap: wrap; }
             .btn { padding: 8px 14px; font-size: 0.75rem; }
             .notification { font-size: 0.8rem; white-space: normal; max-width: 90%; }
-            .otp-input { width: 40px; height: 48px; font-size: 1.2rem; }
             .admin-login-card { padding: 24px 16px; }
         }
 
@@ -249,43 +255,37 @@
         <div class="admin-login-card">
             <button class="admin-login-close" id="admin-login-close">&times;</button>
             <div class="admin-icon"><i class="fas fa-shield-halved"></i></div>
-            
-            <div class="auth-step active" id="admin-step-select">
-                <h3>🔐 اختر المسؤول</h3>
-                <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:18px;">حدد الحساب الذي تريد تسجيل الدخول به</p>
-                <div class="admin-selection" id="admin-selection-container"></div>
-                <button class="telegram-btn" id="admin-proceed-btn" onclick="proceedToOTP()">
-                    <i class="fab fa-telegram-plane"></i> متابعة - طلب كود التحقق
-                </button>
-                <div class="error-msg" id="admin-step-select-error"></div>
-            </div>
 
-            <div class="auth-step" id="admin-step-request">
-                <h3 id="admin-request-title">🔐 طلب كود التحقق</h3>
-                <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:18px;" id="admin-request-info"></p>
-                <button class="telegram-btn" id="admin-request-code-btn">
-                    <i class="fab fa-telegram-plane"></i> طلب كود التحقق
-                </button>
-                <div class="error-msg" id="admin-step1-error"></div>
-                <div class="success-msg" id="admin-step1-success"></div>
-                <button class="back-btn" onclick="goBackToSelect()"><i class="fas fa-arrow-right"></i> العودة لاختيار المسؤول</button>
-            </div>
-
-            <div class="auth-step" id="admin-step-verify">
-                <h3>🔢 أدخل رمز التحقق</h3>
-                <p style="color:var(--text-secondary);font-size:0.85rem;" id="admin-verify-info"></p>
-                <div class="otp-input-group">
-                    <input type="text" class="otp-input" maxlength="1" id="admin-otp-1" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" id="admin-otp-2" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" id="admin-otp-3" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" id="admin-otp-4" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" id="admin-otp-5" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" id="admin-otp-6" inputmode="numeric">
+            <!-- ===== تسجيل الدخول: اسم المستخدم + كلمة المرور ===== -->
+            <div class="auth-step active" id="admin-step-login">
+                <h3>🔐 تسجيل دخول المسؤول</h3>
+                <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:20px;" id="admin-login-info">
+                    أدخل اسم المستخدم وكلمة المرور للوصول إلى لوحة التحكم
+                </p>
+                <div class="input-group" style="margin-bottom:14px;">
+                    <label style="display:block;text-align:right;font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px;">👤 اسم المستخدم</label>
+                    <input type="text" id="admin-username-input" placeholder="admin" dir="ltr"
+                           autocomplete="username" autocapitalize="none" spellcheck="false"
+                           style="width:100%;padding:14px 16px;border-radius:12px;border:2px solid var(--border-color);background:var(--bg-dark);color:#fff;font-family:'Tajawal',sans-serif;font-size:1rem;transition:var(--transition);">
                 </div>
-                <div class="timer-display" id="admin-timer-display"></div>
-                <span class="resend-link disabled" id="admin-resend-link">إعادة الإرسال</span>
-                <div class="error-msg" id="admin-step2-error"></div>
-                <button class="back-btn" onclick="goBackToRequest()"><i class="fas fa-arrow-right"></i> العودة</button>
+                <div class="input-group" style="margin-bottom:16px;">
+                    <label style="display:block;text-align:right;font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px;">🔑 كلمة المرور</label>
+                    <div style="position:relative;">
+                        <input type="password" id="admin-password-input" placeholder="••••••••" dir="ltr"
+                               autocomplete="current-password"
+                               style="width:100%;padding:14px 46px 14px 16px;border-radius:12px;border:2px solid var(--border-color);background:var(--bg-dark);color:#fff;font-family:'Tajawal',sans-serif;font-size:1rem;transition:var(--transition);">
+                        <button type="button" id="admin-toggle-password" aria-label="إظهار كلمة المرور"
+                                style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:0.95rem;padding:6px;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button class="telegram-btn" id="admin-login-btn">
+                    <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                </button>
+                <div class="error-msg" id="admin-login-error"></div>
+                <div class="success-msg" id="admin-login-success"></div>
+                <button class="back-btn" onclick="closeAdminLogin()"><i class="fas fa-arrow-right"></i> إلغاء</button>
             </div>
         </div>
     </div>
@@ -433,46 +433,29 @@
 
     <!-- Admin Management Modal -->
     <div class="modal-overlay" id="adminModal">
-        <div class="modal"><button class="modal-close" onclick="closeModal('adminModal')">&times;</button><h3 id="adminModalTitle">إضافة مسؤول جديد</h3><form id="adminForm"><input type="hidden" id="adminId"><div class="form-grid"><div class="form-group"><label>الاسم *</label><input type="text" id="adminName" required></div><div class="form-group"><label>الاسم الكامل *</label><input type="text" id="adminFullName" required></div><div class="form-group"><label>الصلاحية</label><select id="adminRole"><option value="مسؤول رئيسي">مسؤول رئيسي</option><option value="مسؤول ثانوي">مسؤول ثانوي</option><option value="مشرف">مشرف</option></select></div><div class="form-group"><label>رمز البوت *</label><input type="text" id="adminBotToken" required></div><div class="form-group"><label>Chat ID *</label><input type="text" id="adminChatId" required></div><div class="form-group"><label>الصلاحيات</label><select id="adminPermissions"><option value="all">جميع الصلاحيات</option><option value="properties">إدارة العقارات فقط</option><option value="clients">إدارة العملاء فقط</option><option value="appointments">إدارة المعاينات فقط</option></select></div></div><div class="form-actions"><button type="button" class="btn btn-outline" onclick="closeModal('adminModal')">إلغاء</button><button type="submit" class="btn btn-gold">حفظ المسؤول</button></div></form></div>
+        <div class="modal"><button class="modal-close" onclick="closeModal('adminModal')">&times;</button><h3 id="adminModalTitle">إضافة مسؤول جديد</h3><form id="adminForm"><input type="hidden" id="adminId"><div class="form-grid"><div class="form-group"><label>الاسم *</label><input type="text" id="adminName" required></div><div class="form-group"><label>الاسم الكامل *</label><input type="text" id="adminFullName" required></div><div class="form-group"><label>الصلاحية</label><select id="adminRole"><option value="مسؤول رئيسي">مسؤول رئيسي</option><option value="مسؤول ثانوي">مسؤول ثانوي</option><option value="مشرف">مشرف</option></select></div><div class="form-group"><label>الصلاحيات</label><select id="adminPermissions"><option value="all">جميع الصلاحيات</option><option value="properties">إدارة العقارات فقط</option><option value="clients">إدارة العملاء فقط</option><option value="appointments">إدارة المعاينات فقط</option></select></div></div><div style="grid-column:1/-1;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:12px;padding:14px;font-size:0.82rem;color:var(--text-secondary);line-height:1.7;margin-top:8px;"><i class="fas fa-lock" style="color:var(--info);"></i> <strong style="color:var(--text-primary);">إدارة بيانات الدخول على الخادم</strong><br>لا يمكن إضافة أو تعديل توكنات البوت ومعرّفات المحادثات من المتصفح — حمايةً الأسرار. أضف المسؤول من ملف <code>server/.env</code> ثم أعد تشغيل الخادم:<br><code style="display:block;margin-top:6px;direction:ltr;text-align:left;background:rgba(0,0,0,0.3);padding:8px;border-radius:8px;">ADMIN3_NAME=... &nbsp; ADMIN3_BOT_TOKEN=... &nbsp; ADMIN3_CHAT_ID=...</code></div><div class="form-actions"><button type="button" class="btn btn-outline" onclick="closeModal('adminModal')">إلغاء</button><button type="submit" class="btn btn-gold">حفظ المسؤول</button></div></form></div>
     </div>
 
     <script>
         (function() {
-            // ==================== CONFIG ====================
-            let ADMINS = [
-                {
-                    id: 1,
-                    name: 'Dev',
-                    fullName: 'Mr. Developer',
-                    role: 'المسؤول الرئيسي',
-                    avatar: 'D',
-                    botToken: '8723447348:AAHMXH_8xGRxiM9DiO-zo5r01mQ9M-avlcA',
-                    chatId: '6776057443',
-                    permissions: ['all']
-                },
-                {
-                    id: 2,
-                    name: 'مهند',
-                    fullName: 'مهند عبد الخالق - مالك المكتب العقاري',
-                    role: 'المسؤول الثاني',
-                    avatar: 'م',
-                    botToken: '8823516147:AAHb2m4F6SFk8e06QM-JlhN-JAjh3CSparI',
-                    chatId: '7507988657',
-                    permissions: ['all']
-                }
-            ];
+            // ============================================================
+            //  CONFIG
+            // ============================================================
+            //  ⚠️  لا تُخزَّن أي أسرار هنا.
+            //  قائمة المسؤولين (الأسماء والأدوار) تُجلب من الخادم عبر
+            //  /api/admin/admins. توكنات البوت ومعرّفات المحادثات تعيش
+            //  في الخادم فقط (server/.env) ولا تصل للمتصفح أبداً.
+            let ADMINS = [];
 
             // Site Settings
             let siteAppearance = JSON.parse(localStorage.getItem('almaktab_appearance') || '{"primaryColor":"#D4AF37","secondaryColor":"#F4D03F","fontFamily":"Tajawal"}');
             let siteBackup = null;
 
-            const OTP_KEY = 'telegram_otp_data_multi_admin_v2';
             const LONG_PRESS_DURATION = 3000;
-            let otpTimer = null, otpTimeLeft = 0;
             let currentTab = 'dashboard';
             let charts = {};
-            let selectedAdmin = null;
             let currentAdmin = null;
+            let currentAdminId = null;
 
             // Data Stores
             let properties = JSON.parse(localStorage.getItem('almaktab_properties') || '[]');
@@ -481,17 +464,20 @@
             let siteContent = JSON.parse(localStorage.getItem('almaktab_content') || '{"heroTitle":"اكتشف أفخم العقارات في الإمارات","heroSubtitle":"نقدم لكم نخبة من أرقى العقارات الفاخرة","aboutText":"المكتب العقاري هو وجهتكم الأولى للعقارات الفاخرة","contactPhone":"+971 4 123 4567","contactEmail":"info@almaktab.ae","contactAddress":"شارع الشيخ زايد، دبي"}');
             let siteSettings = JSON.parse(localStorage.getItem('almaktab_settings') || '{"defaultLanguage":"ar","defaultTheme":"dark","whatsappNumber":"971501234567","currency":"AED","maxComparisonItems":4}');
 
-            // Load saved admins from localStorage
-            const savedAdmins = localStorage.getItem('almaktab_admins');
-            if (savedAdmins) {
+            // Load admins from the server (public profile only — no secrets).
+            async function loadAdmins() {
                 try {
-                    const parsed = JSON.parse(savedAdmins);
-                    if (parsed.length >= 2) ADMINS = parsed;
-                } catch(e) {}
+                    const res = await fetch((window.ADMIN_API_BASE || '') + '/api/admin/admins', { credentials: 'include' });
+                    const data = await res.json();
+                    if (data.ok && Array.isArray(data.admins)) {
+                        ADMINS = data.admins;
+                    }
+                } catch (_) { /* الخادم غير متاح — نكمل بدون قائمة */ }
             }
 
             function saveAdminsToLocal() {
-                localStorage.setItem('almaktab_admins', JSON.stringify(ADMINS));
+                // ✅ لم يعد هناك تخزين محلي لقائمة المسؤولين.
+                // إدارة المسؤولين تتم على الخادم (server/.env) لحماية التوكنات.
             }
 
             // Seed data
@@ -655,73 +641,45 @@
             function renderAdminsList() {
                 const container = document.getElementById('adminsList');
                 if (!container) return;
+                if (!ADMINS.length) {
+                    container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
+                    loadAdmins().then(renderAdminsList);
+                    return;
+                }
                 container.innerHTML = ADMINS.map(admin => `
                     <div class="admin-list-item">
-                        <div><strong>${admin.fullName}</strong><br><span style="font-size:0.7rem;color:var(--text-secondary);">${admin.role} | Chat ID: ${admin.chatId}</span></div>
-                        <div><span class="permission-badge">${admin.permissions[0] === 'all' ? 'جميع الصلاحيات' : admin.permissions[0]}</span>
-                        <button class="action-icon" onclick="editAdmin(${admin.id})" style="margin-right:8px;"><i class="fas fa-pen"></i></button>
-                        ${ADMINS.length > 1 ? `<button class="action-icon" onclick="deleteAdmin(${admin.id})"><i class="fas fa-trash"></i></button>` : ''}
+                        <div><strong>${admin.fullName || admin.name}</strong><br><span style="font-size:0.7rem;color:var(--text-secondary);">${admin.role || ''}</span></div>
+                        <div><span class="permission-badge">${(admin.permissions || []).includes('all') ? 'جميع الصلاحيات' : (admin.permissions || []).join(', ')}</span>
+                        <span class="action-icon" title="تُدار بيانات الدخول على الخادم" style="cursor:help;color:var(--text-secondary);"><i class="fas fa-lock"></i></span>
                         </div>
                     </div>
                 `).join('');
             }
 
             function openAdminModal(adminId = null) {
+                const admin = adminId ? ADMINS.find(a => a.id === adminId) : null;
                 document.getElementById('adminModal').classList.add('active');
-                if (adminId) {
-                    const admin = ADMINS.find(a => a.id === adminId);
-                    if (admin) {
-                        document.getElementById('adminModalTitle').textContent = 'تعديل مسؤول';
-                        document.getElementById('adminId').value = admin.id;
-                        document.getElementById('adminName').value = admin.name;
-                        document.getElementById('adminFullName').value = admin.fullName;
-                        document.getElementById('adminRole').value = admin.role;
-                        document.getElementById('adminBotToken').value = admin.botToken;
-                        document.getElementById('adminChatId').value = admin.chatId;
-                        document.getElementById('adminPermissions').value = admin.permissions[0];
-                    }
-                } else {
-                    document.getElementById('adminModalTitle').textContent = 'إضافة مسؤول جديد';
-                    document.getElementById('adminForm').reset();
-                    document.getElementById('adminId').value = '';
+                document.getElementById('adminModalTitle').textContent = 'بيانات المسؤول';
+                document.getElementById('adminForm').reset();
+                document.getElementById('adminId').value = admin ? admin.id : '';
+                if (admin) {
+                    document.getElementById('adminName').value = admin.name || '';
+                    document.getElementById('adminFullName').value = admin.fullName || '';
+                    document.getElementById('adminRole').value = admin.role || '';
+                    document.getElementById('adminPermissions').value = (admin.permissions || ['all'])[0];
                 }
+                showNotification('ℹ️ لتعديل بيانات الدخول، عدّل server/.env ثم أعد تشغيل الخادم');
             }
 
             function saveAdmin() {
-                const id = document.getElementById('adminId').value;
-                const newAdmin = {
-                    id: id ? parseInt(id) : Date.now(),
-                    name: document.getElementById('adminName').value,
-                    fullName: document.getElementById('adminFullName').value,
-                    role: document.getElementById('adminRole').value,
-                    avatar: document.getElementById('adminName').value.charAt(0),
-                    botToken: document.getElementById('adminBotToken').value,
-                    chatId: document.getElementById('adminChatId').value,
-                    permissions: [document.getElementById('adminPermissions').value]
-                };
-                if (id) {
-                    const idx = ADMINS.findIndex(a => a.id === parseInt(id));
-                    if (idx !== -1) ADMINS[idx] = newAdmin;
-                } else {
-                    ADMINS.push(newAdmin);
-                }
-                saveAdminsToLocal();
+                // ✅ بيانات الدخول (التوكن والمعرّف) لا تُحفظ من المتصفح.
+                // التعديل يتم في server/.env — راجع التعليمات داخل النموذج.
                 closeModal('adminModal');
-                showNotification('✅ تم حفظ المسؤول بنجاح');
-                if (document.getElementById('settings-admins').classList.contains('active')) renderAdminsList();
+                showNotification('ℹ️ يتم إدارة المسؤولين من ملف server/.env', 'error');
             }
 
             function deleteAdmin(adminId) {
-                if (ADMINS.length <= 1) {
-                    showNotification('لا يمكن حذف المسؤول الوحيد', 'error');
-                    return;
-                }
-                if (confirm('هل أنت متأكد من حذف هذا المسؤول؟')) {
-                    ADMINS = ADMINS.filter(a => a.id !== adminId);
-                    saveAdminsToLocal();
-                    renderAdminsList();
-                    showNotification('✅ تم حذف المسؤول');
-                }
+                showNotification('ℹ️ حذف المسؤول يتم من ملف server/.env ثم إعادة تشغيل الخادم', 'error');
             }
 
             function editAdmin(adminId) {
@@ -872,76 +830,37 @@
                 }
             });
 
-            // ==================== ADMIN LOGIN ====================
+            // ============================================================
+            //  ADMIN LOGIN — اسم المستخدم + كلمة المرور
+            // ============================================================
+            //  لا توجد أي أسرار في المتصفح: التحقق يتم في الخادم،
+            //  والجلسة تُصدر من الخادم كوكي HttpOnly موقّع.
+            const AUTH_API = (window.ADMIN_API_BASE || '') + '/api/admin';
+
+            /** يطلب من الخادم JSON مع الكوكيز (الجلسة HttpOnly). */
+            async function authFetch(path, options = {}) {
+                const res = await fetch(AUTH_API + path, {
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    ...options,
+                });
+                let data = {};
+                try { data = await res.json(); } catch (_) { /* استجابة غير JSON */ }
+                return { ok: res.ok, status: res.status, data };
+            }
+
             function openAdminLogin() {
                 document.getElementById('admin-login-overlay').classList.add('open');
-                showAdminStep('select');
-                selectedAdmin = null;
-                renderAdminSelection();
+                showAdminStep('login');
+                document.getElementById('admin-login-error').textContent = '';
+                document.getElementById('admin-login-error').classList.remove('show');
+                document.getElementById('admin-login-success').style.display = 'none';
+                setTimeout(() => document.getElementById('admin-username-input')?.focus(), 150);
             }
 
             function closeAdminLogin() {
                 document.getElementById('admin-login-overlay').classList.remove('open');
-                clearInterval(otpTimer);
-                selectedAdmin = null;
-            }
-
-            function renderAdminSelection() {
-                const container = document.getElementById('admin-selection-container');
-                if (!container) return;
-                container.innerHTML = ADMINS.map((admin, index) => {
-                    const separator = index < ADMINS.length - 1 ? '<div class="admin-separator">أو</div>' : '';
-                    return `
-                        <div class="admin-option" id="admin-option-${admin.id}" onclick="selectAdmin(${admin.id})">
-                            <div class="admin-avatar">${admin.avatar}</div>
-                            <div class="admin-info">
-                                <div class="admin-name">${admin.fullName}</div>
-                                <div class="admin-role">${admin.role}</div>
-                                <div class="admin-id">Chat ID: ${admin.chatId}</div>
-                            </div>
-                            <i class="fas fa-check-circle" style="color:var(--gold);font-size:1.2rem;display:none;" id="check-${admin.id}"></i>
-                        </div>
-                        ${separator}
-                    `;
-                }).join('');
-            }
-
-            function selectAdmin(adminId) {
-                selectedAdmin = ADMINS.find(a => a.id === adminId);
-                document.querySelectorAll('.admin-option').forEach(el => el.classList.remove('selected'));
-                document.querySelectorAll('[id^="check-"]').forEach(el => el.style.display = 'none');
-                const optionEl = document.getElementById('admin-option-' + adminId);
-                const checkEl = document.getElementById('check-' + adminId);
-                if (optionEl) optionEl.classList.add('selected');
-                if (checkEl) checkEl.style.display = 'inline-block';
-                document.getElementById('admin-step-select-error').textContent = '';
-                document.getElementById('admin-step-select-error').classList.remove('show');
-            }
-
-            function proceedToOTP() {
-                if (!selectedAdmin) {
-                    const errEl = document.getElementById('admin-step-select-error');
-                    errEl.textContent = '❌ الرجاء اختيار أحد المسؤولين أولاً';
-                    errEl.classList.add('show');
-                    return;
-                }
-                showAdminStep('request');
-                document.getElementById('admin-request-title').textContent = '🔐 طلب كود التحقق';
-                document.getElementById('admin-request-info').textContent = `سيتم إرسال رمز التحقق إلى ${selectedAdmin.fullName} عبر Telegram`;
-                document.getElementById('admin-step1-success').style.display = 'none';
-                document.getElementById('admin-step1-error').textContent = '';
-                document.getElementById('admin-step1-error').classList.remove('show');
-            }
-
-            function goBackToSelect() {
-                showAdminStep('select');
-                clearInterval(otpTimer);
-                renderAdminSelection();
-            }
-
-            function goBackToRequest() {
-                showAdminStep('request');
-                clearInterval(otpTimer);
+                document.getElementById('admin-password-input').value = '';
             }
 
             function showAdminStep(step) {
@@ -951,104 +870,83 @@
                 document.querySelectorAll('.admin-login-card .error-msg').forEach(e => { e.textContent = ''; e.classList.remove('show'); });
             }
 
-            async function adminRequestOTP() {
-                if (!selectedAdmin) { goBackToSelect(); return; }
-                const btn = document.getElementById('admin-request-code-btn');
-                if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...'; }
-                const otp = Math.floor(100000 + Math.random() * 900000).toString();
-                sessionStorage.setItem(OTP_KEY, JSON.stringify({ code: otp, expires: Date.now() + 300000, attempts: 0, adminId: selectedAdmin.id }));
-                const msg = '🔐 *رمز تحقق لوحة التحكم*\n\n👤 *' + selectedAdmin.fullName + '*\n🔢 الرمز: *' + otp + '*\n⏰ ' + new Date().toLocaleString('ar-EG') + '\n\n_صالح لمدة 5 دقائق_';
+            /**
+             * تسجيل الدخول: يرسل اسم المستخدم وكلمة المرور إلى الخادم.
+             * الخادم هو من يتحقق ويرفض، ويعيد رسالة موحّدة لكل الأخطاء
+             * حتى لا يُستنتج وجود الحسابات.
+             */
+            async function adminLogin() {
+                const btn = document.getElementById('admin-login-btn');
+                const username = (document.getElementById('admin-username-input')?.value || '').trim();
+                const password = document.getElementById('admin-password-input')?.value || '';
+
+                const errEl = document.getElementById('admin-login-error');
+                const okEl = document.getElementById('admin-login-success');
+                errEl.textContent = '';
+                errEl.classList.remove('show');
+                okEl.style.display = 'none';
+
+                if (!username || !password) {
+                    showAdminError('admin-login-error', '⚠️ الرجاء إدخال اسم المستخدم وكلمة المرور');
+                    return;
+                }
+
+                if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...'; }
+
                 try {
-                    const r = await fetch('https://api.telegram.org/bot' + selectedAdmin.botToken + '/sendMessage', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: selectedAdmin.chatId, text: msg, parse_mode: 'Markdown' })
+                    const { ok, data } = await authFetch('/login', {
+                        method: 'POST',
+                        body: JSON.stringify({ username, password }),
                     });
-                    const d = await r.json();
-                    if (d.ok) {
-                        const successEl = document.getElementById('admin-step1-success');
-                        successEl.textContent = '✅ تم إرسال الرمز إلى ' + selectedAdmin.fullName;
-                        successEl.style.display = 'block';
-                        setTimeout(() => {
-                            showAdminStep('verify');
-                            document.getElementById('admin-verify-info').textContent = 'الرمز المرسل إلى: ' + selectedAdmin.fullName;
-                            startAdminTimer(300);
-                            document.getElementById('admin-otp-1')?.focus();
-                        }, 600);
-                    } else {
-                        let errorMsg = '❌ فشل الإرسال: ';
-                        if (d.description.includes('chat not found')) errorMsg += 'لم يتم العثور على المحادثة. تأكد أن المستخدم بدأ محادثة مع البوت أولاً (اضغط Start).';
-                        else if (d.description.includes('bot can\'t send messages to bots')) errorMsg += 'خطأ في Chat ID. الرجاء استخدام Chat ID الخاص بالمستخدم وليس معرف البوت.';
-                        else errorMsg += d.description || 'خطأ غير معروف';
-                        showAdminError('admin-step1-error', errorMsg);
+
+                    if (!ok) {
+                        showAdminError('admin-login-error', data.message || '❌ تعذّر تسجيل الدخول');
+                        document.getElementById('admin-password-input').value = '';
+                        document.getElementById('admin-password-input').focus();
+                        return;
                     }
-                } catch(e) {
-                    showAdminError('admin-step1-error', '❌ فشل الاتصال بـ Telegram API');
+
+                    // ---- نجاح ----
+                    currentAdmin = data.admin;
+                    currentAdminId = data.admin.id;
+                    sessionStorage.removeItem('admin_verified');
+                    localStorage.removeItem('adminToken');
+                    updateAdminUI();
+                    document.body.classList.remove('auth-pending');
+                    closeAdminLogin();
+                    showNotification('✅ مرحباً ' + (currentAdmin.fullName || currentAdmin.name));
+                    initDashboard();
+                } catch (err) {
+                    showAdminError('admin-login-error', '❌ تعذّر الاتصال بالخادم. تأكد أن الخدمة تعمل.');
                 } finally {
-                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fab fa-telegram-plane"></i> طلب كود التحقق'; }
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> تسجيل الدخول'; }
                 }
             }
 
-            function adminVerifyOTP() {
-                const digits = [];
-                for (let i = 1; i <= 6; i++) digits.push(document.getElementById('admin-otp-' + i)?.value || '');
-                const entered = digits.join('');
-                if (entered.length !== 6) { showAdminError('admin-step2-error', 'أدخل 6 أرقام'); return; }
-                const otpData = JSON.parse(sessionStorage.getItem(OTP_KEY) || '{}');
-                if (!otpData.code || Date.now() > otpData.expires) { showAdminError('admin-step2-error', 'انتهت صلاحية الرمز'); return; }
-                if (otpData.attempts >= 5) { showAdminError('admin-step2-error', 'تم تجاوز الحد الأقصى'); return; }
-                otpData.attempts++;
-                sessionStorage.setItem(OTP_KEY, JSON.stringify(otpData));
-                if (entered === otpData.code) {
-                    sessionStorage.removeItem(OTP_KEY);
-                    clearInterval(otpTimer);
-                    currentAdmin = ADMINS.find(a => a.id === otpData.adminId) || ADMINS[0];
-                    sessionStorage.setItem('admin_verified', 'true');
-                    localStorage.setItem('adminToken', 'telegram_verified_' + Date.now());
-                    localStorage.setItem('currentAdminId', currentAdmin.id);
-                    localStorage.setItem('currentAdminData', JSON.stringify(currentAdmin));
-                    updateAdminUI();
-                    showNotification('✅ تم التحقق بنجاح - أهلاً ' + currentAdmin.fullName);
-                    closeAdminLogin();
-                    initDashboard();
-                } else {
-                    showAdminError('admin-step2-error', '❌ رمز خاطئ - متبقي ' + (5 - otpData.attempts) + ' محاولات');
-                    for (let j = 1; j <= 6; j++) document.getElementById('admin-otp-' + j).value = '';
-                    document.getElementById('admin-otp-1')?.focus();
-                }
+            /** إظهار/إخفاء كلمة المرور. */
+            function toggleAdminPassword() {
+                const input = document.getElementById('admin-password-input');
+                const btn = document.getElementById('admin-toggle-password');
+                if (!input || !btn) return;
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                btn.innerHTML = show ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+                btn.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+                input.focus();
             }
 
             function updateAdminUI() {
                 if (!currentAdmin) return;
-                document.getElementById('sidebar-avatar').textContent = currentAdmin.avatar;
-                document.getElementById('sidebar-name').textContent = currentAdmin.fullName;
-                document.getElementById('sidebar-role').textContent = currentAdmin.role;
-                document.getElementById('header-admin-name').textContent = currentAdmin.name;
+                const name = currentAdmin.fullName || currentAdmin.name || '';
+                document.getElementById('sidebar-avatar').textContent = currentAdmin.avatar || name.charAt(0);
+                document.getElementById('sidebar-name').textContent = name;
+                document.getElementById('sidebar-role').textContent = currentAdmin.role || '';
+                document.getElementById('header-admin-name').textContent = currentAdmin.name || name;
             }
 
             function switchAdmin() {
-                if (!confirm('هل تريد تسجيل الدخول بحساب مسؤول آخر؟')) return;
+                if (!confirm('هل تريد تسجيل الخروج والدخول بحساب مسؤول آخر؟')) return;
                 logout();
-                setTimeout(() => openAdminLogin(), 500);
-            }
-
-            function startAdminTimer(s) {
-                otpTimeLeft = s;
-                updateAdminTimerDisplay();
-                clearInterval(otpTimer);
-                const rl = document.getElementById('admin-resend-link');
-                if (rl) rl.classList.add('disabled');
-                otpTimer = setInterval(() => {
-                    otpTimeLeft--;
-                    updateAdminTimerDisplay();
-                    if (otpTimeLeft <= 0) { clearInterval(otpTimer); if (rl) rl.classList.remove('disabled'); }
-                }, 1000);
-            }
-
-            function updateAdminTimerDisplay() {
-                const m = Math.floor(otpTimeLeft / 60);
-                const s = otpTimeLeft % 60;
-                const d = document.getElementById('admin-timer-display');
-                if (d) d.textContent = '⏰ ' + m + ':' + (s < 10 ? '0' : '') + s;
             }
 
             function showAdminError(elId, msg) {
@@ -1059,37 +957,15 @@
             // Bind events
             document.getElementById('admin-login-close')?.addEventListener('click', closeAdminLogin);
             document.getElementById('admin-login-overlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeAdminLogin(); });
-            document.getElementById('admin-request-code-btn')?.addEventListener('click', adminRequestOTP);
-            document.getElementById('admin-resend-link')?.addEventListener('click', () => {
-                if (otpTimeLeft > 0) return;
-                sessionStorage.removeItem(OTP_KEY);
-                clearInterval(otpTimer);
-                for (let i = 1; i <= 6; i++) document.getElementById('admin-otp-' + i).value = '';
-                showAdminStep('request');
-            });
+            document.getElementById('admin-login-btn')?.addEventListener('click', adminLogin);
+            document.getElementById('admin-toggle-password')?.addEventListener('click', toggleAdminPassword);
 
-            for (let i = 1; i <= 6; i++) {
-                const inp = document.getElementById('admin-otp-' + i);
-                if (inp) {
-                    inp.addEventListener('input', function() {
-                        this.value = this.value.replace(/[^0-9]/g, '');
-                        if (this.value.length === 1 && i < 6) document.getElementById('admin-otp-' + (i+1))?.focus();
-                        if (i === 6 && this.value.length === 1) setTimeout(adminVerifyOTP, 200);
-                    });
-                    inp.addEventListener('keydown', function(e) {
-                        if (e.key === 'Backspace' && this.value.length === 0 && i > 1) document.getElementById('admin-otp-' + (i-1))?.focus();
-                        if (e.key === 'Enter') adminVerifyOTP();
-                    });
-                    inp.addEventListener('paste', function(e) {
-                        e.preventDefault();
-                        const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
-                        if (pasted.length === 6) {
-                            for (let j = 0; j < 6; j++) document.getElementById('admin-otp-' + (j+1)).value = pasted[j];
-                            setTimeout(adminVerifyOTP, 200);
-                        }
-                    });
-                }
-            }
+            document.getElementById('admin-username-input')?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); document.getElementById('admin-password-input')?.focus(); }
+            });
+            document.getElementById('admin-password-input')?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); adminLogin(); }
+            });
 
             // Mobile menu toggle
             const mobileToggle = document.getElementById('mobileMenuToggle');
@@ -1423,6 +1299,10 @@
             }
 
             function initReportCharts() {
+                if (typeof Chart === 'undefined') {
+                    console.warn('⚠️ Chart.js غير متاح — تم تخطي الرسوم البيانية');
+                    return;
+                }
                 if (charts.types) charts.types.destroy();
                 const typeCounts = {}; properties.forEach(p => { typeCounts[p.type] = (typeCounts[p.type] || 0) + 1; });
                 const ctx = document.getElementById('chartTypes');
@@ -1431,6 +1311,12 @@
 
             function initDashboardCharts() {
                 setTimeout(() => {
+                    // Chart.js comes from a CDN — if it is unavailable the
+                    // dashboard must still work, just without the charts.
+                    if (typeof Chart === 'undefined') {
+                        console.warn('⚠️ Chart.js غير متاح — تم تخطي الرسوم البيانية');
+                        return;
+                    }
                     const ctx = document.getElementById('dashboardMiniChart');
                     if (ctx) new Chart(ctx, { type: 'line', data: { labels: ['يناير','فبراير','مارس','أبريل','مايو'], datasets: [{ data: [12,19,8,15,22], borderColor: '#D4AF37', backgroundColor: 'rgba(212,175,55,0.1)', fill: true }] }, options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } } } });
                 }, 200);
@@ -1453,28 +1339,39 @@
                 return `<div class="stats-grid"><div class="stat-card"><div class="stat-value">${properties.length}</div><div class="stat-label">العقارات</div></div><div class="stat-card"><div class="stat-value">${clients.length}</div><div class="stat-label">العملاء</div></div></div><div class="chart-container"><canvas id="dashboardMiniChart" height="200"></canvas></div><div class="table-container"><div class="table-header"><h3>آخر العقارات</h3></div>${renderPropertiesTable(properties.slice(-5).reverse())}</div>`;
             }
 
-            function logout() {
+            async function logout() {
+                try {
+                    await authFetch('/logout', { method: 'POST' });
+                } catch (_) { /* تجاهل — سنُخفي الواجهة على أي حال */ }
                 localStorage.removeItem('adminToken');
                 localStorage.removeItem('currentAdminId');
                 localStorage.removeItem('currentAdminData');
                 sessionStorage.removeItem('admin_verified');
-                sessionStorage.removeItem(OTP_KEY);
                 currentAdmin = null;
-                selectedAdmin = null;
+                currentAdminId = null;
+                document.body.classList.add('auth-pending');
                 showNotification('تم تسجيل الخروج');
-                setTimeout(() => location.reload(), 1200);
+                setTimeout(() => location.reload(), 900);
             }
 
-            function checkAuth() {
-                const token = localStorage.getItem('adminToken');
-                const verified = sessionStorage.getItem('admin_verified');
-                const savedAdminData = localStorage.getItem('currentAdminData');
-                if (token && verified && savedAdminData) {
-                    currentAdmin = JSON.parse(savedAdminData);
-                    updateAdminUI();
-                    return true;
-                }
-                setTimeout(() => openAdminLogin(), 1000);
+            /**
+             * يتحقق من صلاحية الجلسة لدى الخادم.
+             * لا تُعتمد أي بيانات من localStorage — مصدر الحقيقة الوحيد هو الخادم.
+             */
+            async function checkAuth() {
+                try {
+                    const { ok, data } = await authFetch('/session');
+                    if (ok && data.admin) {
+                        currentAdmin = data.admin;
+                        currentAdminId = data.admin.id;
+                        updateAdminUI();
+                        document.body.classList.remove('auth-pending');
+                        return true;
+                    }
+                } catch (_) { /* الخادم غير متاح — نُظهر بوابة الدخول */ }
+
+                document.body.classList.add('auth-pending');
+                openAdminLogin();
                 return false;
             }
 
@@ -1500,11 +1397,8 @@
             window.logout = logout;
             window.switchAdmin = switchAdmin;
             window.handleGlobalSearch = handleGlobalSearch;
-            window.selectAdmin = selectAdmin;
-            window.proceedToOTP = proceedToOTP;
-            window.goBackToSelect = goBackToSelect;
-            window.goBackToRequest = goBackToRequest;
             window.showSettingsPanel = showSettingsPanel;
+            window.renderAdminsList = renderAdminsList;
             window.openAdminModal = openAdminModal;
             window.saveAdmin = saveAdmin;
             window.deleteAdmin = deleteAdmin;
@@ -1520,9 +1414,20 @@
             window.previewImage = previewImage;
             window.previewVideo = previewVideo; // NEW
 
-            renderAdminSelection();
-            if (checkAuth()) initDashboard();
-            console.log('✅ نظام متعدد المسؤولين جاهز مع إعدادات متكاملة + مزرعة + رفع الصور والفيديو');
+            // ============================================================
+            //  BOOTSTRAP
+            //  1) نُخفي اللوحة فوراً (body.auth-pending) قبل أي طلب شبكة
+            //  2) نتحقق من الجلسة لدى الخادم
+            //  3) فقط عند النجاح نُظهر اللوحة ونُحمّلها
+            // ============================================================
+            document.body.classList.add('auth-pending');
+            loadAdmins();
+
+            checkAuth().then((authenticated) => {
+                if (authenticated) initDashboard();
+            });
+
+            console.log('✅ لوحة التحكم جاهزة — المصادقة عبر الخادم (اسم مستخدم + كلمة مرور)');
         })();
     </script>
 </body>

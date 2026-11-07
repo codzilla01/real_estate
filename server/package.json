@@ -1,0 +1,28 @@
+{
+  "name": "almaktab-admin-auth",
+  "version": "1.0.0",
+  "description": "Secure admin authentication gateway for Al Maktab Al Aqari \u2014 OTP via Telegram, rate limiting, audit log.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node test/run-tests.js",
+    "test:ui": "node test/run-ui-tests.js",
+    "hash-password": "node scripts/hash-password.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "argon2": "^0.45.2",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^18.0.9",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0"
+  },
+  "devDependencies": {
+    "jsdom": "^31.0.0"
+  }
+}
