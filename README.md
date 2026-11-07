@@ -15,7 +15,7 @@
 - 🏠 عرض عقارات احترافي مع تفاعلات مميزة
 - 📊 عدادات وإحصائيات متحركة
 - ✨ Animations & Glass Effects
-- 🔐 **مصادقة OTP عبر Telegram على الخادم** (بدون أسرار في المتصفح)
+- 🔐 **مصادقة باسم المستخدم + كلمة المرور (Argon2id)** — بدون أسرار في المتصفح
 - 🛡️ **حماية من التخمين** + سجل تدقيق كامل
 - ⚡ أداء سريع بدون أي Framework
 - 🧠 Clean Vanilla JavaScript Architecture
@@ -30,11 +30,16 @@
 # 1) تشغيل الخادم
 cd server
 npm install
-cp .env.example .env      # املأ التوكنات ثم
+cp .env.example .env
+
+# ولّد هاش كلمة مرور (Argon2id) ثم انسخه إلى .env
+npm run hash-password -- "YourPassword123!" --env ADMIN1_PASSWORD_HASH
+
 npm start
 
 # 2) افتح الموقع
 #    http://localhost:3000
+#    http://localhost:3000/admin.html  ← لوحة التحكم
 ```
 
 الموقع كامل (`index.html`, `login.html`, `admin.html`) يُقدَّم من نفس الخادم.
@@ -56,19 +61,16 @@ npx serve .
 index.html
    │  ضغط مطوّل (2 ثوانٍ) على الشعار  —  أو  Ctrl+Shift+A
    ▼
-admin.html  ──►  بوابة OTP موحّدة
+admin.html  ──►  بوابة الدخول
                      │
-                     │ 1) إدخال رقم الهاتف
+                     │ 1) اسم المستخدم + كلمة المرور
                      ▼
               الخادم (server/)
-                     │  • يولّد رمز OTP بـ CSPRNG
-                     │  • يرسله عبر Telegram
-                     │  • يخزّن الهاش فقط
-                     │  • يطبّق حدود المحاولات
+                     │  • يتحقق من الهاش بـ Argon2id
+                     │  • يطبّق حدود المحاولات والحظر
+                     │  • لا يكشف إن كان الحساب موجوداً
                      ▼
-                     │ 2) إدخال الرمز (6 أرقام)
-                     ▼
-              الخادم يتحقق ← يصدر كوكي HttpOnly موقّع
+              الخادم يصدر كوكي HttpOnly موقّع
                      ▼
                  لوحة التحكم ✅
 ```
@@ -77,14 +79,14 @@ admin.html  ──►  بوابة OTP موحّدة
 
 | قبل ❌ | بعد ✅ |
 |---|---|
-| توكنات Telegram داخل ملفات HTML | التوكنات في `server/.env` — لا تصل للمتصفح أبداً |
-| كلمة مرور `Admin123` مكتوبة في الكود | لا توجد كلمة مرور — OTP فقط |
+| توكنات Telegram داخل ملفات HTML | **أُزيلت** — لا حاجة إليها للمصادقة |
+| كلمة مرور `Admin123` مكتوبة في الكود | **أُزيلت** — كلمة المرور في `server/.env` كـ hash |
 | `adminToken` في `localStorage` (قابل للتزوير) | كوكي `HttpOnly` موقّع بـ HMAC |
 | أسماء المسؤولين وChat ID معروضة | لا يُكشف وجود الحسابات مسبقاً |
 | Dashboard يُرسم قبل التحقق | الواجهة مخفية حتى نجاح المصادقة |
-| OTP يُولَّد ويُتحقق منه في المتصفح | كل ذلك على الخادم |
+| OTP يُولَّد ويُتحقق منه في المتصفح | **أُزيل** — التحقق من كلمة المرور على الخادم |
 | لا حد لمحاولات | 5 محاولات ثم حظر 15 دقيقة |
-| لا سجل تدقيق | `server/data/audit.log` + تنبيهات Telegram |
+| لا سجل تدقيق | `server/data/audit.log` + تنبيهات Telegram اختيارية |
 
 📖 **[التفاصيل الكاملة والدليل والنشر → `server/README.md`](server/README.md)**
 
@@ -98,7 +100,7 @@ admin.html  ──►  بوابة OTP موحّدة
 ├── login.html          # تسجيل دخول العملاء (عبر الخادم)
 ├── admin.html          # لوحة التحكم (عبر الخادم)
 ├── server/             # 🆕 خادم المصادقة
-│   ├── src/            # Express + JWT-like sessions + OTP + audit
+│   ├── src/            # Express + signed sessions + Argon2id + audit
 │   ├── test/           # 8 اختبارات تلقائية
 │   └── README.md       # دليل التشغيل والنشر
 └── README.md
@@ -133,7 +135,7 @@ cd server && npm test
 ### Backend (اختياري لكنه مُوصى به)
 - Node.js + Express
 - HTTP-only signed session cookies (HMAC-SHA256)
-- Telegram Bot API
+- Argon2id (تشفير كلمات المرور)
 - Helmet · express-rate-limit
 
 ### UI/UX

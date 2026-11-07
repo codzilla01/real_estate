@@ -27,11 +27,15 @@ const env = {
   ALLOWED_ORIGINS: `http://localhost:${PORT}`,
   PUBLIC_URL: `http://localhost:${PORT}`,
   // Relaxed limits so the suite is not order-dependent.
-  MAX_OTP_REQUESTS_PER_WINDOW: '1000',
-  OTP_RESEND_COOLDOWN_SECONDS: '0',
+  MAX_LOGIN_REQUESTS_PER_WINDOW: '1000',
+  MAX_LOGIN_ATTEMPTS: '1000',
   LOGIN_BLOCK_SECONDS: '1',
-  ADMIN1_BOT_TOKEN: 'test:token',
-  ADMIN1_CHAT_ID: '6776057443',
+  ADMIN1_USERNAME: 'admin',
+  ADMIN1_PASSWORD: 'Admin@2026!Secure',
+  ADMIN2_USERNAME: 'manager',
+  ADMIN2_PASSWORD: 'Manager@2026!Secure',
+  CLIENT1_USERNAME: 'client',
+  CLIENT1_PASSWORD: 'Client@2026!Secure',
 };
 
 const child = spawn(process.execPath, [SERVER], { env, stdio: ['ignore', 'pipe', 'pipe'] });

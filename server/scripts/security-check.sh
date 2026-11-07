@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ════════════════════════════════════════════════════════════════
-#  فحص أمني شامل — Al Maktab Admin Auth
+#  فحص أمني شامل — Al Maktab Admin Auth (اسم مستخدم + كلمة مرور)
 #
 #  الاستخدام:
 #    cd server && npm start          # (في نافذة أخرى)
@@ -51,30 +51,44 @@ else
   ok "admin_verified لا يُكتب في sessionStorage"
 fi
 
+# No credential may be compared in the browser.
+if grep -qiE "password\s*===|password\s*==\s*['\"]" ../*.html 2>/dev/null; then
+  no "يوجد مقارنة كلمة مرور داخل المتصفح"
+else
+  ok "لا توجد مقارنة كلمة مرور داخل المتصفح (التحقق في الخادم فقط)"
+fi
+
 echo ""
 echo "═══ 2. الأسرار على الخادم فقط ═══"
-if git check-ignore -q server/.env 2>/dev/null || git check-ignore -q .env 2>/dev/null; then ok "server/.env ضمن .gitignore"; else no "server/.env غير مُتجاهَل"; fi
-if git ls-files --error-unmatch server/.env 2>/dev/null || git ls-files --error-unmatch .env >/dev/null 2>&1; then no "server/.env متتبَّع في git"; else ok "server/.env غير متتبَّع في git"; fi
+if git check-ignore -q .env 2>/dev/null || git check-ignore -q server/.env 2>/dev/null; then
+  ok ".env ضمن .gitignore"
+else
+  no ".env غير مُتجاهَل"
+fi
+if git ls-files --error-unmatch .env >/dev/null 2>&1 || git ls-files --error-unmatch server/.env >/dev/null 2>&1; then
+  no ".env متتبَّع في git"
+else
+  ok ".env غير متتبَّع في git"
+fi
 if grep -q "SESSION_SECRET" .env.example 2>/dev/null; then ok ".env.example يوثّق SESSION_SECRET"; else no ".env.example ينقصه SESSION_SECRET"; fi
+if grep -q "PASSWORD_HASH" .env.example 2>/dev/null; then ok ".env.example يوثّق *_PASSWORD_HASH"; else no ".env.example ينقصه *_PASSWORD_HASH"; fi
 
 echo ""
 echo "═══ 3. منع كشف الحسابات (Account Enumeration) ═══"
-UNKNOWN_PHONE="9$(date +%s | tail -c 10)"
-RESP=$(curl -s -X POST "$BASE/api/admin/request-otp" -H 'Content-Type: application/json' \
-        -d "{\"phone\":\"$UNKNOWN_PHONE\"}" 2>/dev/null)
-if echo "$RESP" | grep -q '"challengeId":"pending"'; then
-  ok "رقم غير مسجل يحصل على رد عام مطابق لرقم مسجّل"
-elif echo "$RESP" | grep -q '"ok":false'; then
-  # Rate-limited / blocked — not an enumeration leak. Note: matching on the
-  # JSON flag avoids locale issues with non-ASCII patterns.
-  echo "  ⏭️  skipped — rate limit / block active from earlier runs"
+UNKNOWN="nosuchuser$(date +%s | tail -c 8)"
+WRONG=$(curl -s -X POST "$BASE/api/admin/login" -H 'Content-Type: application/json' \
+        -d "{\"username\":\"$UNKNOWN\",\"password\":\"definitely-wrong\"}" 2>/dev/null)
+REAL_USER=$(curl -s -X POST "$BASE/api/admin/login" -H 'Content-Type: application/json' \
+        -d '{"username":"admin","password":"definitely-wrong"}' 2>/dev/null)
+if [ -n "$WRONG" ] && [ "$WRONG" = "$REAL_USER" ]; then
+  ok "اسم مستخدم غير موجود وكلمة مرور خاطئة يعطيان رداً متطابقاً"
 else
-  no "رد الرقم غير المسجل يكشف معلومات: $RESP"
+  no "الردود مختلفة وتسمح بكشف الحسابات: '$WRONG' vs '$REAL_USER'"
 fi
 
 echo ""
 echo "═══ 4. مقاومة تزوير الجلسة ═══"
-FORGED='eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOjEsImV4cCI6OTk5OTk5OTk5OX0.forged'
+FORGED='eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOjF9.forged'
 CODE=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/api/admin/session" -H "Cookie: almaktab_admin_session=$FORGED")
 [ "$CODE" = "401" ] && ok "كوكي مزوّر مرفوض على /api/admin/session (401)" || no "كوكي مزوّر أعاد $CODE"
 
@@ -94,7 +108,6 @@ if [ -f data/audit.log ]; then
   ok "audit.log موجود ($(wc -l < data/audit.log) قيد)"
   grep -q "login.success" data/audit.log 2>/dev/null && ok "الدخول الناجح مسجّل" || no "لا يوجد login.success"
   grep -q "login.failed"  data/audit.log 2>/dev/null && ok "الدخول الفاشل مسجّل" || no "لا يوجد login.failed"
-  grep -qE "blocked|rate_limited" data/audit.log 2>/dev/null && ok "أحداث الحدّ مسجّلة" || no "لا توجد أحداث حظر"
 else
   no "audit.log غير موجود"
 fi
@@ -102,7 +115,7 @@ fi
 echo ""
 echo "═══ 7. قائمة المسؤولين لا تحوي أسراراً ═══"
 ROSTER=$(curl -s "$BASE/api/admin/admins")
-if echo "$ROSTER" | grep -qE "botToken|chatId|AA[A-Za-z0-9_-]{30,}"; then
+if echo "$ROSTER" | grep -qE "credential|password|botToken|chatId|AA[A-Za-z0-9_-]{30,}"; then
   no "قائمة المسؤولين تسرّب أسراراً"
 else
   ok "قائمة المسؤولين تعرض الحقول العامة فقط"

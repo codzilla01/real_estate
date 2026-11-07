@@ -1,333 +1,293 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>تسجيل الدخول | المكتب العقاري</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* ===== نفس متغيرات الموقع الرئيسي ===== */
-        :root {
-            --gold: #D4AF37;
-            --gold-light: #F4D03F;
-            --gold-dark: #B8960F;
-            --bg-primary: #F5F5F0;
-            --bg-secondary: #FFFFFF;
-            --bg-glass: rgba(255, 255, 255, 0.15);
-            --bg-glass-hover: rgba(255, 255, 255, 0.25);
-            --border-glass: rgba(255, 255, 255, 0.3);
-            --text-primary: #1a1a1a;
-            --text-secondary: #4a4a4a;
-            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.2);
-            --blur-amount: 20px;
-            --radius-lg: 24px;
-            --radius-full: 50px;
-            --transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Tajawal', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(10,77,60,0.6)),
-                        url('https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920') center/cover fixed;
-            padding: 20px;
-            position: relative;
-        }
-        /* تأثير الضبابية الخلفية */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            z-index: 0;
-        }
-
-        /* ===== بطاقة تسجيل الدخول الزجاجية ===== */
-        .login-card {
-            position: relative;
-            z-index: 1;
-            max-width: 480px;
-            width: 100%;
-            padding: 48px 32px 40px;
-            background: var(--bg-glass);
-            backdrop-filter: blur(var(--blur-amount));
-            -webkit-backdrop-filter: blur(var(--blur-amount));
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-glass);
-            text-align: center;
-            animation: fadeInUp 0.6s ease;
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .login-card .logo {
-            font-size: 32px;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 6px;
-        }
-        .login-card .subtitle {
-            color: rgba(255,255,255,0.8);
-            font-size: 0.95rem;
-            margin-bottom: 28px;
-            font-weight: 300;
-        }
-
-        /* ===== حقول الإدخال ===== */
-        .input-group {
-            margin-bottom: 18px;
-            text-align: right;
-        }
-        .input-group label {
-            display: block;
-            color: rgba(255,255,255,0.85);
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-        .input-group .input-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: var(--radius-full);
-            transition: var(--transition);
-            overflow: hidden;
-        }
-        .input-group .input-wrapper:focus-within {
-            border-color: var(--gold);
-            background: rgba(255,255,255,0.16);
-            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15);
-        }
-        .input-group .input-wrapper i {
-            padding: 0 14px;
-            color: rgba(255,255,255,0.5);
-            font-size: 1.1rem;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 14px 0 14px 14px;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: #fff;
-            font-family: 'Tajawal', sans-serif;
-            font-size: 1rem;
-            direction: ltr;
-        }
-        .input-group input::placeholder {
-            color: rgba(255,255,255,0.45);
-            font-weight: 300;
-        }
-        /* إخفاء أزرار زيادة/نقصان الرقم في متصفحات مختلفة */
-        .input-group input[type="number"]::-webkit-inner-spin-button,
-        .input-group input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        .input-group input[type="number"] {
-            -moz-appearance: textfield;
-        }
-
-        /* ===== أزرار ===== */
-        .btn-gold {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-            border: none;
-            border-radius: var(--radius-full);
-            color: #000;
-            font-family: 'Tajawal', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: var(--transition);
-            box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-gold:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 28px rgba(212, 175, 55, 0.5);
-        }
-        .btn-gold:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .btn-outline {
-            width: 100%;
-            padding: 12px;
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.25);
-            border-radius: var(--radius-full);
-            color: rgba(255,255,255,0.8);
-            font-family: 'Tajawal', sans-serif;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: var(--transition);
-            margin-top: 10px;
-        }
-        .btn-outline:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: var(--gold);
-            color: #fff;
-        }
-
-        /* ===== رسائل التنبيه ===== */
-        .alert {
-            padding: 10px 16px;
-            border-radius: var(--radius-full);
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 16px;
-            display: none;
-            animation: fadeInUp 0.3s ease;
-        }
-        .alert.error {
-            display: block;
-            background: rgba(230, 57, 70, 0.2);
-            border: 1px solid rgba(230, 57, 70, 0.4);
-            color: #ff6b7a;
-        }
-        .alert.success {
-            display: block;
-            background: rgba(16, 185, 129, 0.2);
-            border: 1px solid rgba(16, 185, 129, 0.4);
-            color: #6ee7b7;
-        }
-
-        /* ===== حقل إدخال الرمز + المؤقت ===== */
-        .otp-section {
-            display: none;
-            animation: fadeInUp 0.4s ease;
-        }
-        .otp-section.active {
-            display: block;
-        }
-        .otp-timer {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.8rem;
-            margin-top: 6px;
-        }
-        .otp-timer span {
-            color: var(--gold-light);
-            font-weight: 700;
-        }
-        .resend-btn {
-            background: transparent;
-            border: none;
-            color: var(--gold-light);
-            font-weight: 700;
-            cursor: pointer;
-            font-family: 'Tajawal', sans-serif;
-            font-size: 0.85rem;
-            text-decoration: underline;
-            margin-top: 4px;
-            transition: var(--transition);
-        }
-        .resend-btn:hover {
-            color: var(--gold);
-        }
-        .resend-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* ===== روابط إضافية ===== */
-        .extra-links {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        .extra-links a {
-            color: rgba(255,255,255,0.6);
-            text-decoration: none;
-            font-size: 0.8rem;
-            transition: color 0.2s;
-        }
-        .extra-links a:hover {
-            color: var(--gold-light);
-        }
-
-        /* ===== تذييل بسيط ===== */
-        .footer-note {
-            margin-top: 24px;
-            color: rgba(255,255,255,0.3);
-            font-size: 0.7rem;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            padding-top: 16px;
-        }
-
-        /* ===== استجابة للجوال ===== */
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 32px 20px 28px;
-            }
-            .login-card .logo {
-                font-size: 26px;
-            }
-            .input-group input {
-                font-size: 0.9rem;
-                padding: 12px 0 12px 12px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="login-card">
-        <!-- الشعار -->
-        <div class="logo">🏢 المكتب العقاري</div>
-        <p class="subtitle" id="stepTitle">أدخل رقم هاتفك لتسجيل الدخول</p>
-
-        <!-- رسائل التنبيه -->
-        <div class="alert" id="alertMessage"></div>
-
-        <!-- ===== الخطوة 1: رقم الهاتف ===== -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>تسجيل الدخول | المكتب العقاري</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== نفس متغيرات الموقع الرئيسي ===== */
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #F4D03F;
+            --gold-dark: #B8960F;
+            --bg-primary: #F5F5F0;
+            --bg-secondary: #FFFFFF;
+            --bg-glass: rgba(255, 255, 255, 0.15);
+            --bg-glass-hover: rgba(255, 255, 255, 0.25);
+            --border-glass: rgba(255, 255, 255, 0.3);
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --blur-amount: 20px;
+            --radius-lg: 24px;
+            --radius-full: 50px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Tajawal', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(0,0,0,0.8), rgba(10,77,60,0.6)),
+                        url('https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920') center/cover fixed;
+            padding: 20px;
+            position: relative;
+        }
+        /* تأثير الضبابية الخلفية */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 0;
+        }
+
+        /* ===== بطاقة تسجيل الدخول الزجاجية ===== */
+        .login-card {
+            position: relative;
+            z-index: 1;
+            max-width: 480px;
+            width: 100%;
+            padding: 48px 32px 40px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--blur-amount));
+            -webkit-backdrop-filter: blur(var(--blur-amount));
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-glass);
+            text-align: center;
+            animation: fadeInUp 0.6s ease;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-card .logo {
+            font-size: 32px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+        .login-card .subtitle {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.95rem;
+            margin-bottom: 28px;
+            font-weight: 300;
+        }
+
+        /* ===== حقول الإدخال ===== */
+        .input-group {
+            margin-bottom: 18px;
+            text-align: right;
+        }
+        .input-group label {
+            display: block;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .input-group .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius-full);
+            transition: var(--transition);
+            overflow: hidden;
+        }
+        .input-group .input-wrapper:focus-within {
+            border-color: var(--gold);
+            background: rgba(255,255,255,0.16);
+            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15);
+        }
+        .input-group .input-wrapper i {
+            padding: 0 14px;
+            color: rgba(255,255,255,0.5);
+            font-size: 1.1rem;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 14px 0 14px 14px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1rem;
+            direction: ltr;
+        }
+        .input-group input::placeholder {
+            color: rgba(255,255,255,0.45);
+            font-weight: 300;
+        }
+        /* إخفاء أزرار زيادة/نقصان الرقم في متصفحات مختلفة */
+        .input-group input[type="number"]::-webkit-inner-spin-button,
+        .input-group input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .input-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* ===== أزرار ===== */
+        .btn-gold {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            border: none;
+            border-radius: var(--radius-full);
+            color: #000;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(212, 175, 55, 0.5);
+        }
+        .btn-gold:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-outline {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: var(--radius-full);
+            color: rgba(255,255,255,0.8);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 10px;
+        }
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--gold);
+            color: #fff;
+        }
+
+        /* ===== رسائل التنبيه ===== */
+        .alert {
+            padding: 10px 16px;
+            border-radius: var(--radius-full);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            display: none;
+            animation: fadeInUp 0.3s ease;
+        }
+        .alert.error {
+            display: block;
+            background: rgba(230, 57, 70, 0.2);
+            border: 1px solid rgba(230, 57, 70, 0.4);
+            color: #ff6b7a;
+        }
+        .alert.success {
+            display: block;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+        }
+
+        /* ===== حقول تسجيل الدخول ===== */
+
+        /* ===== روابط إضافية ===== */
+        .extra-links {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .extra-links a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.2s;
+        }
+        .extra-links a:hover {
+            color: var(--gold-light);
+        }
+
+        /* ===== تذييل بسيط ===== */
+        .footer-note {
+            margin-top: 24px;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.7rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 16px;
+        }
+
+        /* ===== استجابة للجوال ===== */
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 32px 20px 28px;
+            }
+            .login-card .logo {
+                font-size: 26px;
+            }
+            .input-group input {
+                font-size: 0.9rem;
+                padding: 12px 0 12px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <!-- الشعار -->
+        <div class="logo">🏢 المكتب العقاري</div>
+        <p class="subtitle" id="stepTitle">أدخل رقم هاتفك لتسجيل الدخول</p>
+
+        <!-- رسائل التنبيه -->
+        <div class="alert" id="alertMessage"></div>
+
+        <!-- ===== تسجيل الدخول: اسم المستخدم + كلمة المرور ===== -->
         <div id="stepPhone">
             <div class="input-group">
-                <label>📱 رقم الهاتف</label>
+                <label>👤 اسم المستخدم</label>
                 <div class="input-wrapper">
-                    <i class="fas fa-phone-alt"></i>
-                    <input type="number" id="phoneInput" placeholder="مثال: 971501234567" dir="ltr">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="usernameInput" placeholder="اسم المستخدم" dir="ltr"
+                           autocomplete="username" autocapitalize="none" spellcheck="false">
                 </div>
             </div>
-            <button class="btn-gold" id="sendOtpBtn">
-                <i class="fas fa-paper-plane"></i> إرسال رمز التحقق
-            </button>
-        </div>
-
-        <!-- ===== الخطوة 2: رمز التحقق (يظهر بعد الإرسال) ===== -->
-        <div class="otp-section" id="stepOtp">
             <div class="input-group">
-                <label>🔐 رمز التحقق</label>
+                <label>🔑 كلمة المرور</label>
                 <div class="input-wrapper">
-                    <i class="fas fa-shield-alt"></i>
-                    <input type="number" id="otpInput" placeholder="أدخل الرمز المكون من 6 أرقام" dir="ltr" maxlength="6">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="passwordInput" placeholder="كلمة المرور" dir="ltr"
+                           autocomplete="current-password">
+                    <button type="button" id="togglePassword" aria-label="إظهار كلمة المرور"
+                            style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:0.9rem;padding:4px;">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
             </div>
-            <div class="otp-timer">
-                ⏳ يتبقى <span id="timerDisplay">05:00</span> لإعادة الإرسال
-            </div>
-            <button class="resend-btn" id="resendBtn" disabled>إعادة إرسال الرمز</button>
-            <button class="btn-gold" id="verifyBtn" style="margin-top:12px;">
-                <i class="fas fa-check-circle"></i> تحقق وتسجيل الدخول
+            <button class="btn-gold" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
             </button>
         </div>
 
@@ -338,45 +298,33 @@
         </div>
 
         <div class="footer-note">
-            سيتم إرسال رمز التحقق عبر تلغرام إلى رقم هاتفك
+            الدخول مخصص للعملاء المسجّلين — تواصل معنا إن لم يكن لديك حساب
         </div>
     </div>
-
+
     <script>
         (function() {
             // ============================================================
             // 0. الإعدادات
             // ============================================================
             //  ⚠️  لا توجد أسرار في هذا الملف.
-            //  توليد رمز التحقق والتحقق منه يتمان على الخادم،
-            //  والتوكن الخاص ببوت تلغرام لا يصل المتصفح إطلاقاً.
+            //  التحقق من اسم المستخدم وكلمة المرور يتم في الخادم،
+            //  والجلسة تُصدر من الخادم كوكي HttpOnly موقّع.
             const API_BASE = window.ADMIN_API_BASE || '';
             const CLIENT_API = API_BASE + '/api/client';
 
             // ============================================================
-            // 1. متغيرات الحالة
+            // 1. عناصر DOM
             // ============================================================
-            let challengeId = null;         // معرّف التحدي (issued by the server)
-            let timerInterval = null;
-            let resendCooldown = 0;         // منع إعادة الإرسال قبل 60 ثانية
-            let submittedPhone = '';
-
-            // ============================================================
-            // 2. عناصر DOM
-            // ============================================================
-            const phoneInput = document.getElementById('phoneInput');
-            const sendOtpBtn = document.getElementById('sendOtpBtn');
-            const otpInput = document.getElementById('otpInput');
-            const verifyBtn = document.getElementById('verifyBtn');
-            const resendBtn = document.getElementById('resendBtn');
-            const timerDisplay = document.getElementById('timerDisplay');
+            const usernameInput = document.getElementById('usernameInput');
+            const passwordInput = document.getElementById('passwordInput');
+            const toggleBtn = document.getElementById('togglePassword');
+            const loginBtn = document.getElementById('loginBtn');
             const alertEl = document.getElementById('alertMessage');
             const stepTitle = document.getElementById('stepTitle');
-            const stepOtp = document.getElementById('stepOtp');
-            const stepPhone = document.getElementById('stepPhone');
 
             // ============================================================
-            // 3. دوال المساعدة
+            // 2. دوال المساعدة
             // ============================================================
             function showAlert(message, type = 'error') {
                 alertEl.textContent = message;
@@ -406,183 +354,65 @@
             }
 
             // ============================================================
-            // 4. بدء العد التنازلي (5 دقائق)
+            // 3. تسجيل الدخول
             // ============================================================
-            function startTimer(durationSeconds = 300) {
-                let remaining = durationSeconds;
-                clearInterval(timerInterval);
-                timerInterval = setInterval(() => {
-                    remaining--;
-                    const mins = String(Math.floor(remaining / 60)).padStart(2, '0');
-                    const secs = String(remaining % 60).padStart(2, '0');
-                    timerDisplay.textContent = `${mins}:${secs}`;
-                    if (remaining <= 0) {
-                        clearInterval(timerInterval);
-                        timerDisplay.textContent = '00:00';
-                        resendBtn.disabled = false;
-                        challengeId = null;
-                        showAlert('⏳ انتهت صلاحية الرمز. الرجاء طلب رمز جديد.', 'error');
-                    }
-                }, 1000);
-            }
-
-            // ============================================================
-            // 5. الخطوة الأولى: طلب رمز التحقق من الخادم
-            // ============================================================
-            async function handleSendOtp() {
+            async function handleLogin() {
                 clearAlert();
-                const phone = phoneInput.value.replace(/\D/g, '');
+                const username = (usernameInput?.value || '').trim();
+                const password = passwordInput?.value || '';
 
-                if (!phone || phone.length < 8) {
-                    showAlert('📱 الرجاء إدخال رقم هاتف صحيح', 'error');
+                if (!username || !password) {
+                    showAlert('⚠️ الرجاء إدخال اسم المستخدم وكلمة المرور', 'error');
                     return;
                 }
 
-                // منع الإرسال المتكرر محلياً (الخادم يطبّق حداً إضافياً أيضاً)
-                const now = Date.now();
-                if (resendCooldown > now) {
-                    const wait = Math.ceil((resendCooldown - now) / 1000);
-                    showAlert(`⏳ انتظر ${wait} ثانية قبل إعادة الإرسال`, 'error');
-                    return;
-                }
-
-                sendOtpBtn.disabled = true;
-                sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
 
                 try {
-                    const { ok, data } = await clientFetch('/request-otp', {
+                    const { ok, data } = await clientFetch('/login', {
                         method: 'POST',
-                        body: JSON.stringify({ phone }),
+                        body: JSON.stringify({ username, password }),
                     });
 
                     if (!ok) {
-                        showAlert(data.message || '❌ فشل إرسال الرمز. حاول مرة أخرى.', 'error');
+                        showAlert(data.message || '❌ اسم المستخدم أو كلمة المرور غير صحيحة', 'error');
+                        passwordInput.value = '';
+                        passwordInput.focus();
                         return;
                     }
 
-                    challengeId = data.challengeId;
-                    submittedPhone = phone;
-                    resendCooldown = Date.now() + 60 * 1000;
+                    // ---- نجاح ----
+                    showAlert('✅ تم تسجيل الدخول بنجاح! جاري توجيهك...', 'success');
 
-                    // عرض حقل إدخال الرمز
-                    stepPhone.style.display = 'none';
-                    stepOtp.classList.add('active');
-                    stepTitle.textContent = 'أدخل رمز التحقق المرسل إلى هاتفك';
-
-                    showAlert('✅ ' + (data.message || 'تم إرسال رمز التحقق'), 'success');
-
-                    // بدء العد التنازلي
-                    startTimer(data.expiresIn || 300);
-                    resendBtn.disabled = true;
-
-                    // تركيز على حقل الرمز
-                    otpInput.focus();
-                } catch (err) {
-                    showAlert('❌ تعذّر الاتصال بالخدمة. تأكد أن الخادم يعمل.', 'error');
-                } finally {
-                    sendOtpBtn.disabled = false;
-                    sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال رمز التحقق';
-                }
-            }
-
-            // ============================================================
-            // 6. الخطوة الثانية: التحقق من الرمز لدى الخادم
-            // ============================================================
-            async function handleVerify() {
-                clearAlert();
-                const otp = otpInput.value.trim();
-
-                if (!challengeId) {
-                    showAlert('⏳ الرجاء طلب رمز تحقق جديد.', 'error');
-                    return;
-                }
-
-                if (!otp || otp.length < 6) {
-                    showAlert('🔐 الرجاء إدخال رمز التحقق المكون من 6 أرقام', 'error');
-                    return;
-                }
-
-                verifyBtn.disabled = true;
-                verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
-
-                try {
-                    const { ok, data } = await clientFetch('/verify', {
-                        method: 'POST',
-                        body: JSON.stringify({ challengeId, otp }),
-                    });
-
-                    if (!ok) {
-                        showAlert(data.message || '❌ رمز تحقق غير صحيح. حاول مرة أخرى.', 'error');
-                        otpInput.value = '';
-                        otpInput.focus();
-                        return;
-                    }
-
-                    // ---- نجاح التحقق (الجلسة صادرة من الخادم) ----
-                    showAlert('✅ تم التحقق بنجاح! جاري توجيهك...', 'success');
-
-                    // ‎إزالة أي جلسة قديمة من التخزين المحلي
+                    // إزالة أي جلسة قديمة من التخزين المحلي
                     localStorage.removeItem('almaktab_client_session');
 
                     setTimeout(() => {
                         window.location.href = 'index.html?login=success';
-                    }, 1200);
+                    }, 1000);
                 } catch (err) {
-                    showAlert('❌ تعذّر الاتصال بالخدمة. حاول مرة أخرى.', 'error');
+                    showAlert('❌ تعذّر الاتصال بالخدمة. تأكد أن الخادم يعمل.', 'error');
                 } finally {
-                    verifyBtn.disabled = false;
-                    verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> تحقق وتسجيل الدخول';
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> تسجيل الدخول';
                 }
             }
 
             // ============================================================
-            // 7. إعادة إرسال الرمز
+            // 4. إظهار/إخفاء كلمة المرور
             // ============================================================
-            async function handleResend() {
-                clearAlert();
-
-                const now = Date.now();
-                if (resendCooldown > now) {
-                    const wait = Math.ceil((resendCooldown - now) / 1000);
-                    showAlert(`⏳ انتظر ${wait} ثانية قبل إعادة الإرسال`, 'error');
-                    return;
-                }
-
-                if (!submittedPhone) {
-                    showAlert('📱 الرجاء إدخال رقم الهاتف أولاً', 'error');
-                    return;
-                }
-
-                resendBtn.disabled = true;
-                resendBtn.textContent = '⏳ جاري الإرسال...';
-
-                try {
-                    const { ok, data } = await clientFetch('/request-otp', {
-                        method: 'POST',
-                        body: JSON.stringify({ phone: submittedPhone }),
-                    });
-
-                    if (!ok) {
-                        showAlert(data.message || '❌ فشل إعادة الإرسال', 'error');
-                        resendBtn.disabled = false;
-                        return;
-                    }
-
-                    challengeId = data.challengeId;
-                    resendCooldown = Date.now() + 60 * 1000;
-                    startTimer(data.expiresIn || 300);
-                    resendBtn.disabled = true;
-                    otpInput.value = '';
-                    otpInput.focus();
-                    showAlert('✅ تم إرسال رمز جديد', 'success');
-                } catch (err) {
-                    showAlert('❌ تعذّر الاتصال بالخدمة. حاول مرة أخرى.', 'error');
-                    resendBtn.disabled = false;
-                }
+            function togglePassword() {
+                if (!passwordInput || !toggleBtn) return;
+                const show = passwordInput.type === 'password';
+                passwordInput.type = show ? 'text' : 'password';
+                toggleBtn.innerHTML = show ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+                toggleBtn.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+                passwordInput.focus();
             }
 
             // ============================================================
-            // 8. التحقق من الجلسة الحالية عند تحميل الصفحة
+            // 5. التحقق من الجلسة الحالية عند تحميل الصفحة
             // ============================================================
             async function checkExistingSession() {
                 try {
@@ -595,31 +425,31 @@
             }
 
             // ============================================================
-            // 9. ربط الأحداث
+            // 6. ربط الأحداث
             // ============================================================
-            sendOtpBtn.addEventListener('click', handleSendOtp);
-            verifyBtn.addEventListener('click', handleVerify);
-            resendBtn.addEventListener('click', handleResend);
+            loginBtn.addEventListener('click', handleLogin);
+            toggleBtn.addEventListener('click', togglePassword);
 
-            // السماح بإرسال الرمز بالضغط على Enter في حقل الهاتف
-            phoneInput.addEventListener('keydown', (e) => {
+            // Enter في اسم المستخدم → الانتقال إلى كلمة المرور
+            usernameInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    sendOtpBtn.click();
+                    passwordInput.focus();
                 }
             });
 
-            // السماح بالتحقق بالضغط على Enter في حقل الرمز
-            otpInput.addEventListener('keydown', (e) => {
+            // Enter في كلمة المرور → تسجيل الدخول
+            passwordInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    verifyBtn.click();
+                    loginBtn.click();
                 }
             });
 
             // ============================================================
-            // 10. التهيئة
+            // 7. التهيئة
             // ============================================================
+            stepTitle.textContent = 'أدخل اسم المستخدم وكلمة المرور لتسجيل الدخول';
             checkExistingSession();
 
             // مساعدة
@@ -631,5 +461,5 @@
             console.log('✅ صفحة تسجيل الدخول جاهزة (المصادقة عبر الخادم)');
         })();
     </script>
-</body>
+</body>
 </html>

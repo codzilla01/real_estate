@@ -1,78 +1,84 @@
 /**
- * Client (customer) authentication routes — passwordless OTP.
+ * Client (customer) authentication routes — username + password.
  *
  * Same security model as the admin gate:
- *   • the OTP is generated on the server with a CSPRNG
- *   • only its HMAC hash is stored
- *   • the browser never sees a bot token
- *   • attempts are rate-limited
+ *   • passwords verified with Argon2id (or constant-time plaintext fallback)
+ *   • unknown usernames and wrong passwords are indistinguishable
+ *   • attempts are rate-limited and repeated failures lock the identity
+ *   • the session is a signed HttpOnly cookie
+ *
+ * If no client accounts are configured (no CLIENT<n>_USERNAME), the public
+ * site simply skips the customer login step.
  */
 import express from 'express';
 import { config } from '../config.js';
 import { audit } from '../audit.js';
 import { signSession, verifySession } from '../session.js';
-import { sendOtp } from '../telegram.js';
+import { burnPasswordCheck, verifyPassword } from '../password.js';
 import {
-  blockKey,
   blockRemaining,
-  cooldownRemaining,
   countInWindow,
-  createChallenge,
   isBlocked,
-  markCooldown,
-  verifyChallenge,
-} from '../otp-store.js';
+  registerFailure,
+  registerSuccess,
+} from '../login-store.js';
 
 export const clientAuthRouter = express.Router();
 
 const CLIENT_SESSION_COOKIE = 'almaktab_client_session';
 
-/**
- * The chat that receives customer OTPs.
- * Reuses the first configured admin's bot so no extra secret is needed.
- */
-function deliveryChannel() {
-  const admin = config.admins[0];
-  if (!admin) return null;
-  return { botToken: admin.botToken, chatId: admin.chatId };
-}
+const GENERIC_ERROR = 'اسم المستخدم أو كلمة المرور غير صحيحة';
 
 function clientIp(req) {
   return req.ip || req.socket?.remoteAddress || 'unknown';
 }
 
-function normalizePhone(input) {
-  return String(input || '').replace(/\D/g, '');
+function findClientByUsername(username) {
+  const needle = String(username || '').trim().toLowerCase();
+  if (!needle) return null;
+  return config.clients.find((c) => c.username.toLowerCase() === needle) || null;
 }
 
 /**
- * A client session is a signed token — the browser cannot forge it.
+ * POST /api/client/login  { username, password }
  */
-export function signClientSession(phone) {
-  return signSession({ sub: `client:${phone}`, phone }, config.sessionTtlSeconds);
-}
-
-/**
- * POST /api/client/request-otp  { phone }
- */
-clientAuthRouter.post('/request-otp', async (req, res) => {
+clientAuthRouter.post('/login', async (req, res) => {
   const ip = clientIp(req);
   const userAgent = req.get('user-agent') || '';
-  const phone = normalizePhone(req.body?.phone);
+  const username = String(req.body?.username || '').trim();
+  const password = String(req.body?.password || '');
 
-  if (!phone || phone.length < 8) {
-    return res.status(400).json({ ok: false, message: 'الرجاء إدخال رقم هاتف صحيح' });
+  if (!username || !password) {
+    return res.status(400).json({ ok: false, message: 'الرجاء إدخال اسم المستخدم وكلمة المرور' });
   }
 
-  if (isBlocked(`client-ip:${ip}`) || isBlocked(`client-phone:${phone}`)) {
-    const remaining = Math.max(blockRemaining(`client-ip:${ip}`), blockRemaining(`client-phone:${phone}`));
+  if (config.clients.length === 0) {
+    return res.status(503).json({
+      ok: false,
+      message: 'خدمة تسجيل دخول العملاء غير مُفعّلة حالياً.',
+    });
+  }
+
+  const ipRequests = countInWindow(`client-login:${ip}`);
+  if (ipRequests > config.maxLoginRequestsPerWindow) {
     audit({
-      action: 'client.otp.blocked',
+      action: 'client.login.rate_limited',
       ip,
       userAgent,
-      detail: `تجاوز حد المحاولات (${remaining} ثانية)`,
+      detail: `طلبات كثيرة (${ipRequests})`,
       alert: true,
-      alertTitle: '🚫 حظر طلب رمز دخول عميل',
+      alertTitle: '🚫 تجاوز حد محاولات دخول العملاء',
+    });
+    return res.status(429).json({ ok: false, message: 'محاولات كثيرة جداً. حاول بعد قليل.' });
+  }
+
+  if (isBlocked(username, ip)) {
+    const remaining = blockRemaining(username, ip);
+    audit({
+      action: 'client.login.blocked',
+      ip,
+      userAgent,
+      detail: `محاولة دخول أثناء الحظر (${remaining} ثانية)`,
     });
     return res.status(429).json({
       ok: false,
@@ -80,118 +86,46 @@ clientAuthRouter.post('/request-otp', async (req, res) => {
     });
   }
 
-  const ipRequests = countInWindow(`client-ip-otp:${ip}`);
-  const phoneRequests = countInWindow(`client-phone-otp:${phone}`);
+  const client = findClientByUsername(username);
 
-  if (ipRequests > config.maxOtpRequestsPerWindow || phoneRequests > config.maxOtpRequestsPerWindow) {
+  if (!client) {
+    await burnPasswordCheck(password);
+    registerFailure(`client:${username}`, ip);
     audit({
-      action: 'client.otp.rate_limited',
+      action: 'client.login.failed',
       ip,
       userAgent,
-      detail: `طلبات كثيرة (IP: ${ipRequests}، رقم: ${phoneRequests})`,
-      alert: true,
-      alertTitle: '🚫 تجاوز حد طلبات رموز العملاء',
+      detail: 'اسم مستخدم غير معروف',
     });
-    return res.status(429).json({ ok: false, message: 'تم إرسال طلبات كثيرة. حاول بعد قليل.' });
+    return res.status(401).json({ ok: false, message: GENERIC_ERROR });
   }
 
-  const cooldown = cooldownRemaining(`client-phone:${phone}`);
-  if (cooldown > 0) {
-    return res.status(429).json({
-      ok: false,
-      message: `يرجى الانتظار ${cooldown} ثانية قبل طلب رمز جديد.`,
-    });
-  }
+  const valid = await verifyPassword(password, client.credential);
 
-  const channel = deliveryChannel();
-  if (!channel) {
-    return res.status(503).json({
-      ok: false,
-      message: 'خدمة الرسائل غير مُفعّلة حالياً. حاول لاحقاً.',
-    });
-  }
-
-  const { id: challengeId, otp } = createChallenge(`client:${phone}`);
-  markCooldown(`client-phone:${phone}`);
-
-  const result = await sendOtp({
-    botToken: channel.botToken,
-    chatId: channel.chatId,
-    fullName: `عميل ${phone}`,
-    otp,
-    expiresInMinutes: Math.round(config.otpTtlSeconds / 60),
-  });
-
-  if (!result.ok) {
+  if (!valid) {
+    const result = registerFailure(`client:${username}`, ip);
     audit({
-      action: 'client.otp.send_failed',
+      action: 'client.login.failed',
       ip,
       userAgent,
-      detail: result.error,
+      detail: result.blocked
+        ? `كلمة مرور خاطئة — تم الحظر ${result.remainingSeconds} ثانية`
+        : `كلمة مرور خاطئة (متبقي ${result.attemptsLeft} محاولات)`,
+      alert: result.blocked,
     });
-    return res.status(502).json({
-      ok: false,
-      message: 'تعذّر إرسال رمز التحقق حالياً. حاول بعد قليل.',
-    });
-  }
 
-  audit({ action: 'client.otp.sent', ip, userAgent, detail: `phone=${phone.slice(-4)}` });
-
-  return res.json({
-    ok: true,
-    challengeId,
-    expiresIn: config.otpTtlSeconds,
-    resendAfter: config.otpResendCooldownSeconds,
-    message: 'تم إرسال رمز التحقق إلى رقمك عبر تلغرام.',
-  });
-});
-
-/**
- * POST /api/client/verify  { challengeId, otp }
- */
-clientAuthRouter.post('/verify', (req, res) => {
-  const ip = clientIp(req);
-  const userAgent = req.get('user-agent') || '';
-  const challengeId = String(req.body?.challengeId || '');
-  const otp = String(req.body?.otp || '').trim();
-
-  if (!challengeId || !/^\d{6}$/.test(otp)) {
-    return res.status(400).json({ ok: false, message: 'رمز غير صالح' });
-  }
-
-  const result = verifyChallenge(challengeId, otp);
-
-  if (!result.ok) {
-    if (result.reason === 'mismatch') {
-      if (result.exhausted) {
-        blockKey(`client-ip:${ip}`, config.loginBlockSeconds);
-      }
-      audit({
-        action: 'client.login.failed',
-        ip,
-        userAgent,
-        detail: `رمز خاطئ (متبقي ${result.attemptsLeft ?? 0} محاولات)`,
-      });
-      return res.status(401).json({
+    if (result.blocked) {
+      return res.status(429).json({
         ok: false,
-        message: result.exhausted
-          ? 'تم تجاوز عدد المحاولات. حاول لاحقاً.'
-          : `رمز غير صحيح. متبقي ${result.attemptsLeft} محاولات.`,
+        message: `تم تجاوز عدد المحاولات. حاول بعد ${Math.ceil(result.remainingSeconds / 60)} دقيقة.`,
       });
     }
-
-    const messages = {
-      expired: 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.',
-      attempts: 'تم تجاوز عدد المحاولات. اطلب رمزاً جديداً.',
-      missing: 'الرمز غير موجود أو منتهي. اطلب رمزاً جديداً.',
-    };
-    return res.status(401).json({ ok: false, message: messages[result.reason] || 'تعذّر التحقق.' });
+    return res.status(401).json({ ok: false, message: GENERIC_ERROR });
   }
 
-  const adminId = result.adminId;
-  const phone = String(adminId).startsWith('client:') ? String(adminId).slice(7) : '';
+  registerSuccess(`client:${username}`);
 
-  const token = signClientSession(phone);
+  const token = signSession({ sub: `client:${client.id}`, username: client.username }, config.sessionTtlSeconds);
   res.cookie(CLIENT_SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
@@ -200,11 +134,17 @@ clientAuthRouter.post('/verify', (req, res) => {
     maxAge: config.sessionTtlSeconds * 1000,
   });
 
-  audit({ action: 'client.login.success', ip, userAgent, detail: `phone=${phone.slice(-4)}` });
+  audit({
+    action: 'client.login.success',
+    ip,
+    userAgent,
+    detail: `username=${client.username}`,
+  });
 
   return res.json({
     ok: true,
-    phone,
+    username: client.username,
+    fullName: client.fullName,
     expiresIn: config.sessionTtlSeconds,
   });
 });
@@ -219,7 +159,7 @@ clientAuthRouter.get('/session', (req, res) => {
   }
   return res.json({
     ok: true,
-    phone: claims.phone,
+    username: claims.username,
     expiresIn: claims.exp - Math.floor(Date.now() / 1000),
   });
 });

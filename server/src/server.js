@@ -15,7 +15,6 @@ import rateLimit from 'express-rate-limit';
 import { config, assertConfig } from './config.js';
 import { adminAuthRouter } from './routes/admin-auth.js';
 import { clientAuthRouter } from './routes/client-auth.js';
-import { activeChallengeCount } from './otp-store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SITE_ROOT = path.resolve(__dirname, '..', '..');
@@ -101,7 +100,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
     adminsConfigured: config.admins.length,
-    activeChallenges: activeChallengeCount(),
+    clientsConfigured: config.clients.length,
     env: config.env,
   });
 });

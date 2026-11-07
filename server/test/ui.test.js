@@ -17,6 +17,10 @@ import { JSDOM, VirtualConsole } from 'jsdom';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SITE_ROOT = path.resolve(__dirname, '..', '..');
 const BASE = process.env.TEST_BASE_URL || 'http://localhost:3000';
+const ADMIN_USER = process.env.TEST_ADMIN_USER || 'admin';
+const ADMIN_PASSWORD = process.env.TEST_ADMIN_PASSWORD || 'Admin@2026!Secure';
+const CLIENT_USER = process.env.TEST_CLIENT_USER || 'client';
+const CLIENT_PASSWORD = process.env.TEST_CLIENT_PASSWORD || 'Client@2026!Secure';
 
 let passed = 0;
 let failed = 0;
@@ -63,11 +67,6 @@ function makeDom(file, url, instrument) {
   return dom;
 }
 
-async function devOtp() {
-  const res = await fetch(`${BASE}/api/admin/dev/otp`);
-  return res.json();
-}
-
 async function testAdminGate() {
   console.log('\n=== admin.html — بوابة الدخول الموحّدة ===\n');
 
@@ -99,35 +98,30 @@ async function testAdminGate() {
   if (!/Chat ID/.test(htmlText)) pass('لا يوجد عرض لـ Chat ID في الواجهة');
   else fail('لا يزال Chat ID معروضاً!');
 
-  if (doc.getElementById('admin-phone-input')) pass('حقل إدخال رقم الهاتف موجود');
-  else fail('حقل رقم الهاتف مفقود!');
+  // The login form must expose username + password fields.
+  if (doc.getElementById('admin-username-input')) pass('حقل اسم المستخدم موجود');
+  else fail('حقل اسم المستخدم مفقود!');
 
-  // Request an OTP through the UI.
-  doc.getElementById('admin-phone-input').value = '6776057443';
-  doc.getElementById('admin-request-code-btn').click();
-  await wait(1500);
+  if (doc.getElementById('admin-password-input')) pass('حقل كلمة المرور موجود');
+  else fail('حقل كلمة المرور مفقود!');
 
-  const stepVerify = doc.getElementById('admin-step-verify');
-  if (stepVerify && stepVerify.classList.contains('active')) {
-    pass('انتقل إلى خطوة إدخال رمز التحقق');
+  if (doc.getElementById('admin-password-input')?.type === 'password') {
+    pass('حقل كلمة المرور من نوع password (مخفي)');
   } else {
-    fail('لم ينتقل إلى خطوة التحقق');
+    fail('حقل كلمة المرور يجب أن يكون مخفياً!');
   }
 
-  const err1 = doc.getElementById('admin-step1-error');
-  if (!err1.classList.contains('show')) pass('لا يوجد خطأ في إرسال الرمز');
-  else fail(`خطأ في إرسال الرمز: ${err1.textContent}`);
-
-  // Submit the OTP.
-  const dev = await devOtp();
-  if (dev.otp) {
-    for (let i = 1; i <= 6; i++) {
-      const el = doc.getElementById('admin-otp-' + i);
-      el.value = dev.otp[i - 1];
-      el.dispatchEvent(new window.Event('input', { bubbles: true }));
-    }
-    await wait(2000);
+  if (!doc.getElementById('admin-step-verify')) {
+    pass('خطوة رمز التحقق (OTP) محذوفة');
+  } else {
+    fail('ما زالت هناك خطوة OTP!');
   }
+
+  // Log in through the UI.
+  doc.getElementById('admin-username-input').value = ADMIN_USER;
+  doc.getElementById('admin-password-input').value = ADMIN_PASSWORD;
+  doc.getElementById('admin-login-btn').click();
+  await wait(2000);
 
   const sidebar = doc.getElementById('sidebar');
   if (sidebar && window.getComputedStyle(sidebar).display !== 'none') {
@@ -166,27 +160,23 @@ async function testClientLogin() {
   const doc = window.document;
   await wait(800);
 
-  doc.getElementById('phoneInput').value = `97150${String(Date.now()).slice(-7)}`;
-  doc.getElementById('sendOtpBtn').click();
+  if (!doc.getElementById('usernameInput')) fail('حقل اسم المستخدم مفقود في login.html!');
+  else pass('حقل اسم المستخدم موجود في login.html');
+
+  if (!doc.getElementById('passwordInput')) fail('حقل كلمة المرور مفقود في login.html!');
+  else pass('حقل كلمة المرور موجود في login.html');
+
+  if (!doc.getElementById('stepOtp')) pass('خطوة رمز التحقق (OTP) محذوفة من صفحة العملاء');
+  else fail('ما زالت هناك خطوة OTP في login.html!');
+
+  doc.getElementById('usernameInput').value = CLIENT_USER;
+  doc.getElementById('passwordInput').value = CLIENT_PASSWORD;
+  doc.getElementById('loginBtn').click();
   await wait(1500);
 
-  const stepOtp = doc.getElementById('stepOtp');
-  if (stepOtp && stepOtp.classList.contains('active')) pass('انتقل إلى خطوة رمز التحقق');
-  else {
-    const a = doc.getElementById('alertMessage');
-    fail(`لم ينتقل لخطوة التحقق — ${a ? a.textContent : ''}`);
-  }
-
-  const dev = await devOtp();
-  if (dev.otp) {
-    doc.getElementById('otpInput').value = dev.otp;
-    doc.getElementById('verifyBtn').click();
-    await wait(1500);
-
-    const alertText = doc.getElementById('alertMessage').textContent;
-    if (alertText.includes('تم التحقق')) pass('تم التحقق بنجاح');
-    else fail(`فشل التحقق: ${alertText}`);
-  }
+  const alertText = doc.getElementById('alertMessage').textContent;
+  if (alertText.includes('تم تسجيل الدخول')) pass('تم تسجيل الدخول بنجاح');
+  else fail(`فشل تسجيل الدخول: ${alertText}`);
 
   dom.window.close();
 }

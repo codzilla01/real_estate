@@ -2,12 +2,14 @@
  * End-to-end API tests for the admin auth server.
  *
  * Run with the server started in MOCK_TELEGRAM mode:
- *   MOCK_TELEGRAM=true npm start
  *   node --test test/api.test.js
+ *
+ * The suite is started automatically by test/run-tests.js against a dedicated
+ * server with relaxed rate limits, so repeat runs stay deterministic.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BASE_URL, ADMIN_PHONE, CLIENT_PHONE, uniquePhone } from './helpers.js';
+import { BASE_URL, ADMIN_USER, ADMIN_PASSWORD, CLIENT_USER, CLIENT_PASSWORD } from './helpers.js';
 
 let cookie = '';
 
@@ -27,12 +29,7 @@ async function api(path, options = {}) {
   return { status: res.status, data, res };
 }
 
-async function devOtp() {
-  const res = await fetch(`${BASE_URL}/api/admin/dev/otp`);
-  return res.json();
-}
-
-test('health endpoint reports configured admins', async () => {
+test('health endpoint reports configured admins and clients', async () => {
   const { status, data } = await api('/api/health');
   assert.equal(status, 200);
   assert.equal(data.ok, true);
@@ -44,15 +41,28 @@ test('session requires authentication', async () => {
   assert.equal(status, 401);
 });
 
-test('unknown phone gets an indistinguishable generic response', async () => {
-  const { status, data } = await api('/api/admin/request-otp', {
+test('a wrong password and an unknown user are indistinguishable', async () => {
+  const wrongPassword = await api('/api/admin/login', {
     method: 'POST',
-    body: JSON.stringify({ phone: uniquePhone('99999') }),
+    body: JSON.stringify({ username: ADMIN_USER, password: 'definitely-wrong' }),
   });
-  assert.equal(status, 200);
-  assert.equal(data.ok, true);
-  assert.equal(data.challengeId, 'pending');
-  assert.ok(!data.message.includes('غير مسجل'));
+  const unknownUser = await api('/api/admin/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: 'no-such-user', password: 'definitely-wrong' }),
+  });
+
+  assert.equal(wrongPassword.status, 401);
+  assert.equal(unknownUser.status, 401);
+  // Identical messages — the client must not be able to enumerate accounts.
+  assert.equal(wrongPassword.data.message, unknownUser.data.message);
+});
+
+test('missing credentials are rejected', async () => {
+  const { status } = await api('/api/admin/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: ADMIN_USER }),
+  });
+  assert.equal(status, 400);
 });
 
 test('a forged session cookie is rejected', async () => {
@@ -63,54 +73,44 @@ test('a forged session cookie is rejected', async () => {
 });
 
 test('full admin login flow works', async () => {
-  const req = await api('/api/admin/request-otp', {
+  const login = await api('/api/admin/login', {
     method: 'POST',
-    body: JSON.stringify({ phone: ADMIN_PHONE }),
+    body: JSON.stringify({ username: ADMIN_USER, password: ADMIN_PASSWORD }),
   });
-
-  if (req.status === 429) {
-    // The server enforces a resend cooldown. Skip rather than fail so the
-    // suite stays green when run twice in quick succession.
-    console.log('  ⏭️  skipped — resend cooldown still active');
-    return;
-  }
-
-  assert.equal(req.status, 200);
-  assert.ok(req.data.challengeId);
-  assert.notEqual(req.data.challengeId, 'pending');
-
-  const dev = await devOtp();
-  assert.ok(dev.otp, 'expected a mock OTP');
-
-  const verify = await api('/api/admin/verify', {
-    method: 'POST',
-    body: JSON.stringify({ challengeId: req.data.challengeId, otp: dev.otp }),
-  });
-  assert.equal(verify.status, 200);
-  assert.equal(verify.data.ok, true);
-  assert.ok(verify.data.admin.name);
+  assert.equal(login.status, 200);
+  assert.equal(login.data.ok, true);
+  assert.ok(login.data.admin.name);
 
   const session = await api('/api/admin/session');
   assert.equal(session.status, 200);
-  assert.equal(session.data.admin.id, verify.data.admin.id);
+  assert.equal(session.data.admin.id, login.data.admin.id);
+});
+
+test('the username is matched case-insensitively', async () => {
+  const login = await api('/api/admin/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: ADMIN_USER.toUpperCase(), password: ADMIN_PASSWORD }),
+  });
+  assert.equal(login.status, 200);
+  assert.equal(login.data.ok, true);
 });
 
 test('a client session cannot access admin endpoints', async () => {
-  const req = await api('/api/client/request-otp', {
+  const login = await api('/api/client/login', {
     method: 'POST',
-    body: JSON.stringify({ phone: uniquePhone() }),
+    body: JSON.stringify({ username: CLIENT_USER, password: CLIENT_PASSWORD }),
   });
-  assert.equal(req.status, 200);
-
-  const dev = await devOtp();
-  const verify = await api('/api/client/verify', {
-    method: 'POST',
-    body: JSON.stringify({ challengeId: req.data.challengeId, otp: dev.otp }),
-  });
-  assert.equal(verify.status, 200);
+  assert.equal(login.status, 200);
 
   const adminSession = await api('/api/admin/session');
   assert.equal(adminSession.status, 401, 'client cookie must not grant admin access');
+});
+
+test('the admin roster exposes no secrets', async () => {
+  const { status, data } = await api('/api/admin/admins');
+  assert.equal(status, 200);
+  const json = JSON.stringify(data);
+  assert.ok(!/credential|passwordHash|passwordPlain|botToken|chatId/.test(json));
 });
 
 test('logout invalidates the session', async () => {
