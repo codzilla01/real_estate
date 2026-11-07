@@ -6,7 +6,16 @@
 import 'node:process';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: new URL('../.env', import.meta.url).pathname });
+// A .env file must NEVER override variables that were already provided by the
+// environment. Otherwise a developer's local .env would leak into test runs
+// (and into production, where platform variables must win).
+// Set SKIP_DOTENV=true to ignore the .env file entirely.
+if (!process.env.SKIP_DOTENV) {
+  dotenv.config({
+    path: new URL('../.env', import.meta.url).pathname,
+    override: false,
+  });
+}
 
 function bool(value, fallback = false) {
   if (value === undefined || value === null || value === '') return fallback;
@@ -152,14 +161,14 @@ export function assertConfig() {
   const problems = [];
 
   if (!config.sessionSecret || config.sessionSecret.length < 32) {
-    problems.push('SESSION_SECRET is missing or shorter than 32 characters.');
+    problems.push('FATAL: SESSION_SECRET is missing or shorter than 32 characters.');
   }
   if (config.sessionSecret === 'change_me_to_a_long_random_string_at_least_32_chars') {
-    problems.push('SESSION_SECRET is still the placeholder value.');
+    problems.push('FATAL: SESSION_SECRET is still the placeholder value.');
   }
   if (config.admins.length === 0) {
     problems.push(
-      'No active admins: set ADMIN1_USERNAME and ADMIN1_PASSWORD_HASH (or ADMIN1_PASSWORD).',
+      'FATAL: No active admins — set ADMIN1_USERNAME and ADMIN1_PASSWORD_HASH (or ADMIN1_PASSWORD).',
     );
   }
   if (config.env === 'production' && !config.secureCookies) {
@@ -182,7 +191,9 @@ export function assertConfig() {
   const usernames = config.admins.map((a) => a.username.toLowerCase());
   const dupes = usernames.filter((u, i) => usernames.indexOf(u) !== i);
   if (dupes.length) {
-    problems.push(`Duplicate admin usernames: ${[...new Set(dupes)].join(', ')}.`);
+    problems.push(
+      `FATAL: Duplicate admin usernames: ${[...new Set(dupes)].join(', ')} — login would be ambiguous.`,
+    );
   }
 
   return problems;

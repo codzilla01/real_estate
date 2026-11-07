@@ -5,6 +5,9 @@
 > 🔐 **نظام الدخول للوحة التحكم تم تحديثه بالكامل** — من تحقق في المتصفح إلى مصادقة كاملة على الخادم.
 > راجع [`server/README.md`](server/README.md) للتفاصيل.
 
+> ⚠️ **الموقع لم يعد ملفات ثابتة.** الدخول يعتمد على خادم Node يقدّم الـ API **و** الملفات معاً.
+> إعدادات النشر (Vercel / Docker / PM2 / Nginx) في [`server/README.md`](server/README.md#-النشر).
+
 ## ✨ المميزات الرئيسية
 
 - 🎨 تصميم فاخر Modern Luxury UI
@@ -99,9 +102,13 @@ admin.html  ──►  بوابة الدخول
 ├── index.html          # واجهة الموقع (عام)
 ├── login.html          # تسجيل دخول العملاء (عبر الخادم)
 ├── admin.html          # لوحة التحكم (عبر الخادم)
-├── server/             # 🆕 خادم المصادقة
+├── vercel.json         # نشر على Vercel كـ Node function
+├── Dockerfile          # نشر كحاوية
+├── .github/workflows/  # CI: اختبارات + فحص أمني
+├── server/             # خادم المصادقة
 │   ├── src/            # Express + signed sessions + Argon2id + audit
-│   ├── test/           # 8 اختبارات تلقائية
+│   ├── scripts/        # توليد الهاش + الفحص الأمني
+│   ├── test/           # 11 اختبار API + 26 فحص واجهة
 │   └── README.md       # دليل التشغيل والنشر
 └── README.md
 ```
@@ -111,8 +118,11 @@ admin.html  ──►  بوابة الدخول
 ## 🧪 الاختبارات
 
 ```bash
-cd server && npm test
+cd server && npm test        # 11 اختبار API
+cd server && npm run test:ui # 26 فحص واجهة
 ```
+
+وتُشغَّل تلقائياً في كل PR عبر `.github/workflows/ci.yml`.
 
 ---
 

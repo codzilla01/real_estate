@@ -188,32 +188,50 @@ npm run test:ui # اختبارات الواجهة (26 فحصاً عبر jsdom)
 
 ## 🚀 النشر
 
+> ⚠️ **الموقع لم يعد ملفات ثابتة.** الدخول يعتمد على خادم Node يوفّر الـ API
+> ويخدم الملفات معاً. على Vercel (أو أي منصة static) **لن يعمل الدخول** قبل
+> ضبط إعدادات النشر أدناه.
+
+### Vercel
+
+الملف `vercel.json` في جذر المستودع يضبط المشروع كـ Node function:
+
+```bash
+# 1) أضف المتغيّرات في لوحة Vercel → Settings → Environment Variables
+SESSION_SECRET=<hex 96 char>
+ADMIN1_USERNAME=admin
+ADMIN1_PASSWORD_HASH=$argon2id$v=19$...
+SECURE_COOKIES=true
+FRAME_ANCESTORS='none'
+ALLOWED_ORIGINS=https://your-domain.com
+NODE_ENV=production
+
+# 2) اربط نطاقك
+vercel --prod
+```
+
+> `vercel.json` يوجّه كل المسارات إلى `server/src/server.js`، الذي يقدّم
+> الـ API **و** الملفات الثابتة من عملية واحدة.
+
+### Docker (موصى به لخادم خاص)
+
+```bash
+docker build -t almaktab .
+docker run -d --name almaktab \
+  -p 3000:3000 \
+  --env-file server/.env \
+  -v almaktab-data:/app/server/data \
+  almaktab
+```
+
+> `server/data` يجمع سجل التدقيق — استخدم volume ليبقى بعد إعادة التشغيل.
+
 ### Node + PM2 (موصى به)
 
 ```bash
 npm ci --omit=dev
 pm2 start src/server.js --name almaktab-auth --env production
 pm2 save && pm2 startup
-```
-
-### Docker
-
-```dockerfile
-FROM node:22-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --omit=dev
-COPY src ./src
-EXPOSE 3000
-CMD ["node", "src/server.js"]
-```
-
-```bash
-docker run -d --name almaktab-auth \
-  -p 3000:3000 \
-  --env-file .env \
-  -v "$(pwd)/data:/app/data" \
-  almaktab-auth
 ```
 
 ### Railway / Render / Fly.io
