@@ -398,7 +398,7 @@
 
             // ============================================================
             // 4. طريقة الدخول: الضغط المطول (2 ثانية) على الشعار
-            //    ينقل المسؤول إلى بوابة OTP الموحّدة في admin.html
+            //    ينقل المسؤول إلى بوابة الدخول الموحّدة في admin.html
             // ============================================================
             const logo = document.getElementById('adminLogo');
             let pressTimer = null;
@@ -415,8 +415,8 @@
                         logo.classList.remove('pressing');
 
                         // ✅ لا توجد كلمة مرور في المتصفح.
-                        //    المصادقة الكاملة (رقم → OTP عبر Telegram) تتم في admin.html
-                        //    والخادم هو من يتحقق من الرمز ويُصدر جلسة موقّعة.
+                        //    المصادقة الكاملة (اسم مستخدم + كلمة مرور) تتم في admin.html
+                        //    والخادم هو من يتحقق ويُصدر جلسة موقّعة.
                         sendAdminNotification('admin_panel.access_attempt');
                         window.location.href = 'admin.html';
                     }
@@ -661,7 +661,7 @@
                 renderAllProperties('all');
                 updateStats();
                 updateContent();
-                console.log('✅ النسخة النهائية - يتم إرسال إشعارات تلغرام للنجاح والفشل');
+                console.log('✅ الموقع جاهز — المصادقة والإشعارات تُدار عبر الخادم');
             }
 
             setInterval(() => {

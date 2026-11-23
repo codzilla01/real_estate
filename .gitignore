@@ -1,0 +1,21 @@
+# التبعيات
+node_modules/
+
+# الأسرار — لا تُرفع أبداً
+server/.env
+.env
+
+# بيانات التشغيل
+server/data/*.log
+*.log
+
+# مخلفات النظام والمحررات
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Vercel / مخلفات البناء
+.vercel
+dist/
