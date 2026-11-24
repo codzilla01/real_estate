@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: إعداد Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: تثبيت التبعيات
+        run: npm ci
+
+      - name: اختبارات API (11)
+        run: npm test
+
+      - name: فحوص الواجهة (26)
+        run: npm run test:ui
+
+      - name: الفحص الأمني
+        run: npm run security-check

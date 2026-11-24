@@ -561,12 +561,12 @@
             function renderSettings() {
                 return `
                     <div class="settings-tabs">
-                        <button class="settings-tab active" onclick="showSettingsPanel('general')">🏠 عام</button>
-                        <button class="settings-tab" onclick="showSettingsPanel('admins')">👥 إدارة المسؤولين</button>
-                        <button class="settings-tab" onclick="showSettingsPanel('appearance')">🎨 المظهر</button>
-                        <button class="settings-tab" onclick="showSettingsPanel('notifications')">🔔 الإشعارات</button>
-                        <button class="settings-tab" onclick="showSettingsPanel('backup')">💾 النسخ الاحتياطي</button>
-                        <button class="settings-tab" onclick="showSettingsPanel('advanced')">⚙️ متقدم</button>
+                        <button class="settings-tab active" onclick="showSettingsPanel('general', this)">🏠 عام</button>
+                        <button class="settings-tab" onclick="showSettingsPanel('admins', this)">👥 إدارة المسؤولين</button>
+                        <button class="settings-tab" onclick="showSettingsPanel('appearance', this)">🎨 المظهر</button>
+                        <button class="settings-tab" onclick="showSettingsPanel('notifications', this)">🔔 الإشعارات</button>
+                        <button class="settings-tab" onclick="showSettingsPanel('backup', this)">💾 النسخ الاحتياطي</button>
+                        <button class="settings-tab" onclick="showSettingsPanel('advanced', this)">⚙️ متقدم</button>
                     </div>
                     <div id="settings-general" class="settings-panel active">
                         <div class="settings-card">
@@ -630,11 +630,11 @@
                 `;
             }
 
-            function showSettingsPanel(panel) {
+            function showSettingsPanel(panel, el) {
                 document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
                 document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
                 document.getElementById(`settings-${panel}`).classList.add('active');
-                event.target.classList.add('active');
+                if (el) el.classList.add('active');
                 if (panel === 'admins') renderAdminsList();
             }
 
@@ -685,6 +685,12 @@
             function editAdmin(adminId) {
                 openAdminModal(adminId);
             }
+
+            // نموذج المسؤول: بيانات الدخول تُدار في server/.env (لا حفظ من المتصفح)
+            document.getElementById('adminForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveAdmin();
+            });
 
             function saveGeneralSettings() {
                 siteSettings.currency = document.getElementById('currencySetting').value;
